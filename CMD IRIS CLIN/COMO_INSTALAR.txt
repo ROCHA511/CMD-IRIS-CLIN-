@@ -1,0 +1,65 @@
+======================================================================
+               ÍRISCLIN - INTELIGÊNCIA RELACIONAL INTEGRADA
+                     GUIA DE INSTALAÇÃO E USO LOCAL
+======================================================================
+
+Olá! Este guia irá te ajudar a instalar e rodar o sistema ÍRIS CLIN
+diretamente no seu computador (Windows).
+
+Siga os passos abaixo para mover e rodar o aplicativo a partir da sua
+Área de Trabalho (Desktop):
+
+----------------------------------------------------------------------
+PASSO 1: BAIXAR E EXTRAIR OS ARQUIVOS
+----------------------------------------------------------------------
+1. No menu superior direito do Google AI Studio, clique em "Settings"
+   (ícone de engrenagem) ou na opção de exportação.
+2. Escolha "Export as ZIP" (Exportar como ZIP) para baixar todo o
+   projeto para o seu computador.
+3. Abra o arquivo ZIP baixado.
+4. Extraia ou mova a pasta "CMD IRIS CLIN" (ou todo o conteúdo do zip)
+   diretamente para a sua ÁREA DE TRABALHO (Desktop).
+
+----------------------------------------------------------------------
+PASSO 2: INSTALAR O NODE.JS (Se ainda não tiver)
+----------------------------------------------------------------------
+O sistema precisa do Node.js para rodar localmente no Windows.
+1. Acesse o site oficial: https://nodejs.org/
+2. Baixe a versão "LTS" (Recomendada para a maioria dos usuários).
+3. Abra o instalador baixado e avance em todas as telas ("Next" ->
+   "Next" -> "Install").
+4. Após concluir, reinicie o seu computador se necessário para carregar
+   as configurações do CMD.
+
+----------------------------------------------------------------------
+PASSO 3: INICIAR O SISTEMA AUTOMATICAMENTE
+----------------------------------------------------------------------
+Criamos um arquivo inteligente para automatizar todo o processo de
+inicialização do seu servidor local.
+
+1. Abra a pasta "CMD IRIS CLIN" na sua Área de Trabalho.
+2. Dê dois cliques no arquivo:
+   👉 INICIAR_SISTEMA.bat
+
+O script executará automaticamente as seguintes etapas:
+- Verificará se o Node.js está instalado corretamente.
+- Instalará todas as bibliotecas necessárias (npm install).
+- Iniciará o servidor local ÍrisClin na porta 3000.
+- Abrirá automaticamente o seu navegador de internet no link:
+  http://localhost:3000
+
+----------------------------------------------------------------------
+PASSO 4: CONFIGURAR A CHAVE API DO GEMINI (Opcional)
+----------------------------------------------------------------------
+Se você quiser que a inteligência artificial "Iris" utilize o poder
+da sua própria chave do Gemini para dar diagnósticos de verdade:
+
+1. Abra o arquivo ".env" localizado na raiz do projeto usando o Bloco
+   de Notas (se o arquivo não existir, o script de inicialização o
+   criará para você).
+2. Adicione sua chave do Gemini na linha:
+   GEMINI_API_KEY=sua_chave_aqui
+3. Salve o arquivo e reinicie o INICIAR_SISTEMA.bat.
+
+Qualquer dúvida ou suporte, consulte a equipe clínica ÍrisClin!
+======================================================================

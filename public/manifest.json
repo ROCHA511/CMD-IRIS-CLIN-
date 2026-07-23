@@ -1,0 +1,18 @@
+{
+  "name": "ÍrisClin - Gestão Oftalmológica & Agendamento Iris AI",
+  "short_name": "ÍrisClin",
+  "description": "Sistema de gestão médica oftalmológica, receitas, exames e agendamento automático via WhatsApp Iris AI.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#091e3a",
+  "theme_color": "#0284c7",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

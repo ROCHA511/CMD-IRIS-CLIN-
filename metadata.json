@@ -1,0 +1,10 @@
+{
+  "name": "Clínica ÍrisClin - Gestão Oftalmológica & Dossiê",
+  "description": "Sistema de gestão médica oftalmológica e fluxo de caixa com módulo de Dossiê, receitas e exames.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

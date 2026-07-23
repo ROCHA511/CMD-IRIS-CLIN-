@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>ÍrisClin • Gestão Oftalmológica & Agendamento Iris AI</title>
+    
+    <!-- PWA Primary Meta Tags -->
+    <meta name="theme-color" content="#0284c7" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ÍrisClin" />
+    <meta name="application-name" content="ÍrisClin" />
+    <meta name="description" content="Sistema de gestão médica oftalmológica, agendamento inteligente por voz e WhatsApp da ÍrisClin." />
+    
+    <!-- Open Graph / WhatsApp / Facebook Link Preview Tags -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://ais-pre-nl3ss3kzcjcv4v6hrosgk6-248777919228.us-east5.run.app" />
+    <meta property="og:title" content="ÍrisClin • Sistema Oftalmológico & Agendamento Íris AI" />
+    <meta property="og:description" content="Acesse o sistema completo da ÍrisClin: agendamentos por ordem de chegada a partir das 06:30, assistente de voz humana 24h, gestão de caixa e prontuário." />
+    <meta property="og:image" content="https://ais-pre-nl3ss3kzcjcv4v6hrosgk6-248777919228.us-east5.run.app/preview-banner.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ÍrisClin Sistema Oftalmológico e Agendamento Íris AI" />
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://ais-pre-nl3ss3kzcjcv4v6hrosgk6-248777919228.us-east5.run.app" />
+    <meta name="twitter:title" content="ÍrisClin • Sistema Oftalmológico & Agendamento Íris AI" />
+    <meta name="twitter:description" content="Acesse o sistema completo da ÍrisClin com assistente de voz humana e agendamento da manhã a partir das 06:30." />
+    <meta name="twitter:image" content="https://ais-pre-nl3ss3kzcjcv4v6hrosgk6-248777919228.us-east5.run.app/preview-banner.svg" />
+    
+    <!-- PWA Manifest & Icons -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
+  </head>
+  <body class="bg-slate-900 text-slate-100 antialiased selection:bg-sky-500 selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+
+    <!-- PWA Service Worker handling (Disabled in localhost/dev, fully managed in production) -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          // Unregister stale SW in dev mode for clean Vite HMR
+          navigator.serviceWorker.getRegistrations().then(registrations => {
+            for (let registration of registrations) {
+              registration.unregister();
+            }
+          });
+          if ('caches' in window) {
+            caches.keys().then(names => {
+              for (let name of names) {
+                caches.delete(name);
+              }
+            });
+          }
+        } else {
+          // Production SW registration and push subscription request
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').then(reg => {
+              console.log('[PWA] Service Worker registrado com sucesso: ', reg.scope);
+              
+              // Detect updates
+              reg.onupdatefound = () => {
+                const installingWorker = reg.installing;
+                if (installingWorker == null) return;
+                installingWorker.onstatechange = () => {
+                  if (installingWorker.state === 'installed') {
+                    if (navigator.serviceWorker.controller) {
+                      console.log('[PWA] Nova versão instalada. Recarregando aplicativo...');
+                      window.location.reload();
+                    } else {
+                      console.log('[PWA] Conteúdo em cache para uso offline!');
+                    }
+                  }
+                };
+              };
+
+              // Request Push Permission
+              if ('Notification' in window && Notification.permission === 'default') {
+                setTimeout(() => {
+                  Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                      console.log('[PWA] Permissão de Push Notifications concedida.');
+                    }
+                  });
+                }, 10000); // Exibe aviso após 10s para não atrapalhar o carregamento inicial
+              }
+            }).catch(err => {
+              console.error('[PWA] Erro ao registrar Service Worker:', err);
+            });
+          });
+        }
+      }
+    </script>
+  </body>
+</html>
+
+
