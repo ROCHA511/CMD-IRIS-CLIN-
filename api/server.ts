@@ -9,7 +9,12 @@ import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import os from 'os';
-import archiver from 'archiver';
+import { createRequire } from 'module';
+
+const safeRequire = typeof __filename !== 'undefined'
+  ? createRequire(new URL('file://' + __filename).href)
+  : createRequire(import.meta.url);
+const archiver = safeRequire('archiver');
 
 import { execSync } from 'child_process';
 import fs from 'fs';
@@ -689,7 +694,7 @@ app.post('/api/copilot/ocr-list', async (req, res) => {
 
 // Setup Vite / Static Files Middleware
 async function startServer() {
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== 'production' && process.env.VERCEL !== '1') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -703,9 +708,13 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  if (process.env.VERCEL !== '1') {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
 }
 
 startServer();
+
+export default app;
