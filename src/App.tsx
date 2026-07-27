@@ -987,9 +987,9 @@ export default function App() {
               onClick={() => setIsMobileDownloadOpen(true)}
             >
               <img 
-                src="/irisclin-official-banner.svg" 
+                src="/irisclin-og-image.jpg" 
                 alt="ÍrisClin SISTEMA WEB" 
-                className="h-9 w-auto object-contain drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]"
+                className="h-9 w-9 rounded-full object-cover border border-amber-400/40 drop-shadow-[0_0_8px_rgba(245,158,11,0.35)]"
                 referrerPolicy="no-referrer"
               />
               <span className="text-[9px] bg-amber-500/20 text-amber-300 font-black px-1.5 py-0.5 rounded border border-amber-400/40 uppercase tracking-widest hidden sm:inline-block">
