@@ -218,14 +218,49 @@ app.post('/api/copilot/chat', async (req, res) => {
       }
 
       const textLower = lastMessage.toLowerCase();
-      if (textLower.includes('glaucoma') || textLower.includes('catarata') || textLower.includes('ceratocone')) {
-        fallbackText += `Sobre sua dúvida sobre ${textLower.includes('glaucoma') ? 'Glaucoma' : textLower.includes('catarata') ? 'Catarata' : 'Ceratocone'}: essa é uma condição que exige todo cuidado e carinho. Sempre recomendo fazer a aferição da pressão ocular em nosso consultório. Posso agendar uma avaliação rápida com a Dra. Julia Martins?`;
-      } else if (textLower.includes('preço') || textLower.includes('valor') || textLower.includes('orçamento') || textLower.includes('custo')) {
-        fallbackText += `Preparei um orçamento com todo carinho! Para a sua lente com antirreflexo e o filtro especial Blue-Control, conseguimos parcelar em até 6x sem juros no cartão de crédito, ou com um descontinho especial de 10% no PIX! Quer que eu te envie o link seguro de pagamento?`;
-      } else if (textLower.includes('agendar') || textLower.includes('consulta') || textLower.includes('marcar') || textLower.includes('vaga') || textLower.includes('terça') || textLower.includes('hoje')) {
-        fallbackText += `Com certeza! Os agendamentos para o Turno da Manhã funcionam a partir das 06:30 por ordem de chegada. Por favor, me informe seu nome completo e telefone para confirmarmos sua vaga na Lista de Pacientes Confirmados da clínica! Podemos confirmar para o Turno da Manhã a partir das 06:30 por ordem de chegada?`;
+      
+      if (textLower.includes('glaucoma')) {
+        fallbackText += `Para glaucoma, nós temos o **Check-up de Glaucoma**, que é uma avaliação super completa para investigação e acompanhamento. O valor promocional é de **R$ 650,00** (valor normal de R$ 720,00) e costuma incluir exames como Campo Visual, OCT, Paquimetria, Gonioscopia e Curva Tensional (quando indicado). Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('olhinho')) {
+        fallbackText += `O **Teste do Olhinho** está sainposso fazer por **R$ 200,00**. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('catarata')) {
+        fallbackText += `A **Cirurgia de Catarata** (por olho) tem o valor de **R$ 3.400,00** no Dinheiro ou Pix, ou **R$ 3.800,00** no cartão. É indispensável passarmos por uma avaliação médica prévia para que o doutor avalie o seu caso. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('pterigio') || textLower.includes('pterígio')) {
+        fallbackText += `A **Cirurgia de Pterígio** (por olho) sai por **R$ 1.600,00** no Dinheiro ou Pix, ou **R$ 1.720,00** no cartão. O médico definirá a indicação correta após a consulta presencial. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('yag') || textLower.includes('capsulotomia')) {
+        fallbackText += `A **Capsulotomia Yag Laser** (por olho) custa **R$ 450,00** no Dinheiro ou Pix, ou **R$ 500,00** no cartão. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('iridotomia')) {
+        fallbackText += `A **Iridotomia** a laser (por olho) custa **R$ 450,00** no Dinheiro ou Pix, ou **R$ 500,00** no cartão. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('curva') || textLower.includes('tensional')) {
+        fallbackText += `A **Curva Tensional** está saindo por **R$ 190,00** no Dinheiro ou Pix, ou **R$ 220,00** no cartão. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('tsh') || textLower.includes('sobrecarga')) {
+        fallbackText += `O **TSH (Teste de Sobrecarga Hídrica)** sai por **R$ 190,00** no Dinheiro ou Pix, ou **R$ 220,00** no cartão. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('retinografia')) {
+        fallbackText += `A **Retinografia Simples** custa **R$ 190,00** no Dinheiro ou Pix, ou **R$ 220,00** no cartão. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('ultrassonografia') || textLower.includes('ultrassom')) {
+        fallbackText += `A **Ultrassonografia Ocular** sai por **R$ 220,00** por olho no Dinheiro ou Pix, ou **R$ 250,00** por olho no cartão. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('biometria')) {
+        fallbackText += `A **Biometria** custa **R$ 190,00** no Dinheiro ou Pix, ou **R$ 220,00** no cartão. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('gonioscopia')) {
+        fallbackText += `A **Gonioscopia** custa **R$ 190,00** no Dinheiro ou Pix, ou **R$ 220,00** no cartão. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('paquimetria')) {
+        fallbackText += `A **Paquimetria** custa **R$ 190,00** no Dinheiro ou Pix, ou **R$ 220,00** no cartão. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('ceratoscopia') || textLower.includes('topografia')) {
+        fallbackText += `A **Ceratoscopia (Topografia)** sai por **R$ 200,00** no Dinheiro ou Pix, ou **R$ 220,00** no cartão. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('mapeamento') || textLower.includes('retina')) {
+        fallbackText += `O **Mapeamento de Retina** custa **R$ 190,00** no Dinheiro ou Pix, ou **R$ 220,00** no cartão. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('fundoscopia')) {
+        fallbackText += `A **Fundoscopia** custa **R$ 190,00** no Dinheiro ou Pix, ou **R$ 220,00** no cartão. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('preço') || textLower.includes('valor') || textLower.includes('orçamento') || textLower.includes('custo') || textLower.includes('quanto')) {
+        fallbackText += `Temos exames de vista e de mapeamento na ÍrisClin a partir de **R$ 190,00** (valor no Dinheiro ou Pix, ou R$ 220,00 no cartão)! Qual é o exame ou procedimento solicitado? Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('pagamento') || textLower.includes('cartão') || textLower.includes('pix') || textLower.includes('crédito') || textLower.includes('forma')) {
+        fallbackText += `Nossas formas de pagamento são: **Pix, Dinheiro, Cartão de Débito e Cartão de Crédito**. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('exames') || textLower.includes('realiza') || textLower.includes('quais')) {
+        fallbackText += `Na ÍrisClin realizamos os seguintes exames: Check-up de Glaucoma, Teste do Olhinho, Curva Tensional, TSH (Sobrecarga Hídrica), Retinografia Simples, Ultrassonografia Ocular, Biometria, Gonioscopia, Paquimetria, Ceratoscopia (Topografia), Mapeamento de Retina e Fundoscopia. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+      } else if (textLower.includes('agendar') || textLower.includes('consulta') || textLower.includes('marcar') || textLower.includes('vaga') || textLower.includes('agenda')) {
+        fallbackText += `Os agendamentos para o Turno da Manhã funcionam a partir das 06:30 por ordem de chegada na clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
       } else {
-        fallbackText += `Entendi perfeitamente sua mensagem sobre "${lastMessage}". Como sua assistente pessoal na ÍrisClin, estou aqui para agilizar seu atendimento, seja com dúvidas das suas lentes, confirmação de agendamento ou orçamentos. Lembre-se que se for uma urgência ou sintoma visual forte, o ideal é passarmos por consulta presencial com nossos médicos, combinado? Como posso te ajudar agora?`;
+        fallbackText += `Encaminhei sua mensagem sobre "${lastMessage}" para nossa recepção humana dar prosseguimento ao seu atendimento. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
       }
 
       return res.json({ response: fallbackText, fallback: true });
@@ -254,6 +289,76 @@ app.post('/api/copilot/chat', async (req, res) => {
       - Olho Direito: Esférico ${patientContext?.opticalData?.od?.sph || 'N/A'} | Cilíndrico ${patientContext?.opticalData?.od?.cyl || 'N/A'} | Eixo ${patientContext?.opticalData?.od?.axis || 'N/A'} | Adição ${patientContext?.opticalData?.od?.add || 'N/A'}
       - Olho Esquerdo: Esférico ${patientContext?.opticalData?.oe?.sph || 'N/A'} | Cilíndrico ${patientContext?.opticalData?.oe?.cyl || 'N/A'} | Eixo ${patientContext?.opticalData?.oe?.axis || 'N/A'} | Adição ${patientContext?.opticalData?.oe?.add || 'N/A'}
       - Armação preferencial / Material extraído da foto: ${patientContext?.lensFeatures?.materialArmacao || 'N/A'}
+
+      *** MEMÓRIA OFICIAL ÍRIS CLIN — TABELA DE EXAMES E PROCEDIMENTOS OFTALMOLÓGICOS ***
+      REGRA: Quando o paciente perguntar valor de exames, procedimentos ou cirurgias, responder utilizando esta tabela oficial:
+
+      = EXAMES OFTALMOLÓGICOS =
+      - CHECK-UP DE GLAUCOMA:
+        * Descrição: Avaliação completa para investigação e acompanhamento do glaucoma.
+        * Valor Promocional: R$ 650,00
+        * Valor Normal: R$ 720,00
+        * Exames normalmente incluídos: Campo Visual, OCT, Paquimetria, Gonioscopia, Curva Tensional (quando indicado).
+      - TESTE DO OLHINHO:
+        * Valor: R$ 200,00
+      - CURVA TENSIONAL:
+        * Dinheiro/Pix: R$ 190,00
+        * Cartão: R$ 220,00
+      - TSH (TESTE DE SOBRECARGA HÍDRICA):
+        * Dinheiro/Pix: R$ 190,00
+        * Cartão: R$ 220,00
+      - RETINOGRAFIA SIMPLES:
+        * Dinheiro/Pix: R$ 190,00
+        * Cartão: R$ 220,00
+      - ULTRASSONOGRAFIA OCULAR (Por olho):
+        * Dinheiro/Pix: R$ 220,00 por olho
+        * Cartão: R$ 250,00 por olho
+      - BIOMETRIA:
+        * Dinheiro/Pix: R$ 190,00
+        * Cartão: R$ 220,00
+      - GONIOSCOPIA:
+        * Dinheiro/Pix: R$ 190,00
+        * Cartão: R$ 220,00
+      - PAQUIMETRIA:
+        * Dinheiro/Pix: R$ 190,00
+        * Cartão: R$ 220,00
+      - CERATOSCOPIA (TOPOGRAFIA):
+        * Dinheiro/Pix: R$ 200,00
+        * Cartão: R$ 220,00
+      - MAPEAMENTO DE RETINA:
+        * Dinheiro/Pix: R$ 190,00
+        * Cartão: R$ 220,00
+      - FUNDOSCOPIA:
+        * Dinheiro/Pix: R$ 190,00
+        * Cartão: R$ 220,00
+
+      = PROCEDIMENTOS A LASER (Por olho) =
+      - CAPSULOTOMIA YAG LASER:
+        * Dinheiro/Pix: R$ 450,00
+        * Cartão: R$ 500,00
+      - IRIDOTOMIA:
+        * Dinheiro/Pix: R$ 450,00
+        * Cartão: R$ 500,00
+
+      = CIRURGIAS (Por olho) =
+      - CIRURGIA DE CATARATA:
+        * Dinheiro/Pix: R$ 3.400,00
+        * Cartão: R$ 3.800,00
+      - CIRURGIA DE PTERÍGIO:
+        * Dinheiro/Pix: R$ 1.600,00
+        * Cartão: R$ 1.720,00
+
+      *** REGRAS DE ATENDIMENTO DA IA ÍRIS (OBRIGATÓRIO SEGUIR) ***
+      1. Sempre informar o valor promocional primeiro.
+      2. Sempre mencionar a frase exata: "Valores sujeitos a confirmação pela clínica."
+      3. Quando o paciente mencionar glaucoma, sugerir ativamente: Check-up de Glaucoma, OCT, Campo Visual, Paquimetria, Gonioscopia.
+      4. Quando o paciente mencionar catarata: Informar o valor da cirurgia de catarata e explicar claramente que é necessária avaliação médica prévia.
+      5. Quando o paciente mencionar pterígio: Informar o valor da cirurgia de pterígio e explicar de forma clara que o médico definirá a indicação após a consulta presencial.
+      6. Ao final de cada atendimento, sempre oferecer: "Deseja agendar sua avaliação na ÍRIS CLIN?"
+      7. Se o paciente perguntar quais exames a clínica realiza, listar todos os exames cadastrados nesta memória (Check-up de Glaucoma, Teste do Olhinho, Curva Tensional, TSH, Retinografia Simples, Ultrassonografia Ocular, Biometria, Gonioscopia, Paquimetria, Ceratoscopia, Mapeamento de Retina, Fundoscopia).
+      8. Se o paciente perguntar formas de pagamento, informar estritamente: Pix, Dinheiro, Cartão de Débito, Cartão de Crédito.
+      9. Se não encontrar um exame na memória, encaminhar educadamente o atendimento para a recepção humana.
+      10. Priorizar sempre uma linguagem acolhedora, humana (respeitando idosos e crianças), profissional, educada e objetiva.
 
       *** MEMÓRIA INTELIGENTE & CONTEXTO COMPLETO ***
       - Sempre mantenha contexto completo durante toda a conversa:
