@@ -81,6 +81,14 @@ import AiExamAnalysisModal from './components/AiExamAnalysisModal';
 import AuthModal, { PRESET_USERS } from './components/AuthModal';
 import PatientPortalModal from './components/PatientPortalModal';
 import { speakHumanVoice } from './utils/humanVoice';
+import { 
+  getPatientsFromIndexedDB, 
+  savePatientsToIndexedDB, 
+  saveSinglePatientToIndexedDB,
+  enqueueOfflineAction, 
+  getPendingOfflineActions, 
+  clearSyncedOfflineActions 
+} from './utils/offlineDb';
 
 // Custom interface for Dashboard metrics
 interface ClinicDashboard {
@@ -108,6 +116,15 @@ export default function App() {
     }
     return INITIAL_PATIENTS;
   });
+
+  const [isNetworkOnline, setIsNetworkOnline] = useState<boolean>(navigator.onLine);
+  const [isSyncingOfflineData, setIsSyncingOfflineData] = useState<boolean>(false);
+  const [offlineSyncMessage, setOfflineSyncMessage] = useState<string | null>(null);
+
+  // Gravador de áudio para mensagens de voz
+  const [isRecordingAudio, setIsRecordingAudio] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const [selectedId, setSelectedId] = useState<string>('1');
   const [searchQuery, setSearchQuery] = useState('');
@@ -141,13 +158,21 @@ export default function App() {
   const [isWeeklyAgendaOpen, setIsWeeklyAgendaOpen] = useState(false);
 
   // Helper to update or insert single patient
-  const handleUpdateSinglePatient = (updatedPatient: Patient) => {
+  const handleUpdateSinglePatient = async (updatedPatient: Patient) => {
     setPatients(prev => {
       const exists = prev.some(p => p.id === updatedPatient.id);
       if (exists) {
         return prev.map(p => p.id === updatedPatient.id ? updatedPatient : p);
       }
       return [updatedPatient, ...prev];
+    });
+
+    // Salvar em IndexedDB
+    await saveSinglePatientToIndexedDB(updatedPatient);
+    // Enfileirar para sincronização posterior
+    await enqueueOfflineAction({
+      type: 'UPDATE_PATIENT',
+      payload: updatedPatient
     });
   };
 
@@ -177,13 +202,19 @@ export default function App() {
           status: 'Enviado'
         };
 
-        return {
+        const updated = {
           ...p,
           lastMessage: personalizedText,
           lastActiveTime: timeStr,
           chatHistory: [...p.chatHistory, newMsg],
           timeline: [newTimelineEvent, ...p.timeline]
         };
+
+        // Cache e Sincronização offline das mensagens
+        saveSinglePatientToIndexedDB(updated);
+        enqueueOfflineAction({ type: 'UPDATE_PATIENT', payload: updated });
+
+        return updated;
       }
       return p;
     }));
@@ -193,7 +224,10 @@ export default function App() {
   const handleUpdatePatientDocuments = (patientId: string, docs: PatientDocument[]) => {
     setPatients(prev => prev.map(p => {
       if (p.id === patientId) {
-        return { ...p, documents: docs };
+        const updated = { ...p, documents: docs };
+        saveSinglePatientToIndexedDB(updated);
+        enqueueOfflineAction({ type: 'UPDATE_PATIENT', payload: updated });
+        return updated;
       }
       return p;
     }));
@@ -203,13 +237,16 @@ export default function App() {
   const handleUpdatePatientOpticalData = (patientId: string, newOptical: PatientOpticalData) => {
     setPatients(prev => prev.map(p => {
       if (p.id === patientId) {
-        return {
+        const updated = {
           ...p,
           opticalData: {
             od: { ...p.opticalData.od, ...newOptical.od },
             oe: { ...p.opticalData.oe, ...newOptical.oe }
           }
         };
+        saveSinglePatientToIndexedDB(updated);
+        enqueueOfflineAction({ type: 'UPDATE_PATIENT', payload: updated });
+        return updated;
       }
       return p;
     }));
@@ -401,6 +438,73 @@ export default function App() {
     localStorage.setItem('irisclin_patients', JSON.stringify(patients));
   }, [patients]);
 
+  // Carga inicial do cache local do IndexedDB para os pacientes
+  useEffect(() => {
+    const initLocalDb = async () => {
+      try {
+        const cached = await getPatientsFromIndexedDB();
+        if (cached && cached.length > 0) {
+          setPatients(cached);
+        } else {
+          await savePatientsToIndexedDB(patients);
+        }
+      } catch (err) {
+        console.warn('Erro ao inicializar o banco local IndexedDB:', err);
+      }
+    };
+    initLocalDb();
+  }, []);
+
+  // Monitorar estado da rede e disparar sincronização silenciosa
+  useEffect(() => {
+    const handleOnline = async () => {
+      setIsNetworkOnline(true);
+      
+      const pendingActions = await getPendingOfflineActions();
+      if (pendingActions.length > 0) {
+        setIsSyncingOfflineData(true);
+        setOfflineSyncMessage(`Sincronizando ${pendingActions.length} atualizações offline...`);
+        
+        try {
+          const res = await fetch('/api/sync/offline-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ queue: pendingActions })
+          });
+          const data = await res.json();
+          if (data.success) {
+            await clearSyncedOfflineActions();
+            setOfflineSyncMessage(`✓ Sincronização offline concluída! ${data.syncedCount} itens sincronizados.`);
+            setTimeout(() => setOfflineSyncMessage(null), 5000);
+          } else {
+            setOfflineSyncMessage('⚠️ Falha ao processar lote de sync offline.');
+            setTimeout(() => setOfflineSyncMessage(null), 5000);
+          }
+        } catch (err) {
+          console.error('[Sync Engine error]:', err);
+          setOfflineSyncMessage('⚠️ Sem conexão para sincronização.');
+          setTimeout(() => setOfflineSyncMessage(null), 5000);
+        } finally {
+          setIsSyncingOfflineData(false);
+        }
+      }
+    };
+
+    const handleOffline = () => {
+      setIsNetworkOnline(false);
+      setOfflineSyncMessage('Modo Offline Ativo. As alterações serão salvas no dispositivo.');
+      setTimeout(() => setOfflineSyncMessage(null), 5000);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [patients]);
+
   const selectedPatient = patients.find(p => p.id === selectedId) || patients[0];
 
   // Scroll to bottom of chat
@@ -496,6 +600,157 @@ export default function App() {
     }
   };
 
+  // INICIAR GRAVAÇÃO DE VOZ DO MICROFONE (MediaRecorder)
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        stream.getTracks().forEach(track => track.stop());
+
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64Audio = reader.result as string;
+          await sendAudioMessageToIris(base64Audio, audioBlob);
+        };
+      };
+
+      mediaRecorder.start();
+      setIsRecordingAudio(true);
+    } catch (err) {
+      console.error('Erro ao acessar microfone:', err);
+      alert('Não foi possível acessar o microfone para gravação de áudio.');
+    }
+  };
+
+  // PARAR GRAVAÇÃO DE VOZ E ENVIAR
+  const stopVoiceRecording = () => {
+    if (mediaRecorderRef.current && isRecordingAudio) {
+      mediaRecorderRef.current.stop();
+      setIsRecordingAudio(false);
+    }
+  };
+
+  // ENVIAR AUDIO DA MENSAGEM DO PACIENTE E SOLICITAR RESPOSTA
+  const sendAudioMessageToIris = async (audioBase64: string, audioBlob: Blob) => {
+    setIsChatting(true);
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    let textTranscription = "Mensagem de Voz";
+    try {
+      const res = await fetch('/api/copilot/speech-to-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audioBase64 })
+      });
+      const data = await res.json();
+      if (data.transcription) {
+        textTranscription = data.transcription;
+      }
+    } catch (err) {
+      console.error('Erro ao transcrever áudio:', err);
+    }
+
+    const userMsg: ChatMessage = {
+      id: `m-voice-${Date.now()}`,
+      sender: 'admin',
+      senderName: 'Dr. Augusto Faro',
+      content: `🎙️ Mensagem de Voz: "${textTranscription}"`,
+      timestamp,
+      audioUrl
+    };
+
+    setPatients(prev => prev.map(p => {
+      if (p.id === selectedPatient.id) {
+        const updated = {
+          ...p,
+          lastMessage: userMsg.content,
+          lastActiveTime: timestamp,
+          chatHistory: [...p.chatHistory, userMsg]
+        };
+        saveSinglePatientToIndexedDB(updated);
+        enqueueOfflineAction({ type: 'UPDATE_PATIENT', payload: updated });
+        return updated;
+      }
+      return p;
+    }));
+
+    try {
+      const activeHistory = [...selectedPatient.chatHistory, userMsg];
+      const response = await fetch('/api/copilot/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: activeHistory,
+          patientContext: {
+            name: selectedPatient.name,
+            status: selectedPatient.status
+          }
+        })
+      });
+      const data = await response.json();
+      const replyText = data.response || "Entendido, irei verificar.";
+
+      let replyAudioUrl = undefined;
+      try {
+        const ttsRes = await fetch('/api/copilot/text-to-speech', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: replyText })
+        });
+        const ttsData = await ttsRes.json();
+        if (ttsData.audioUrl) {
+          replyAudioUrl = ttsData.audioUrl;
+        }
+      } catch (err) {
+        console.error('Erro ao gerar TTS da Iris:', err);
+      }
+
+      const replyMsg: ChatMessage = {
+        id: `m-reply-${Date.now()}`,
+        sender: 'copilot',
+        senderName: 'Iris AI',
+        content: replyText,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        audioUrl: replyAudioUrl
+      };
+
+      setPatients(prev => prev.map(p => {
+        if (p.id === selectedPatient.id) {
+          const updated = {
+            ...p,
+            chatHistory: [...p.chatHistory, replyMsg]
+          };
+          saveSinglePatientToIndexedDB(updated);
+          enqueueOfflineAction({ type: 'UPDATE_PATIENT', payload: updated });
+          return updated;
+        }
+        return p;
+      }));
+
+      if (isTtsEnabled && replyAudioUrl) {
+        const audio = new Audio(replyAudioUrl);
+        audio.play().catch(e => console.warn('Erro ao reproduzir voz:', e));
+      }
+    } catch (err) {
+      console.error('Erro ao processar resposta do chat:', err);
+    } finally {
+      setIsChatting(false);
+    }
+  };
+
   // NEW FEATURE: Text-to-Speech (TTS) Speak Audio with Ultra-Human Female Voice
   const speakText = (text: string) => {
     if (!isTtsEnabled) return;
@@ -566,26 +821,50 @@ export default function App() {
       });
       const data = await response.json();
       
+      let replyAudioUrl = undefined;
+      try {
+        const ttsRes = await fetch('/api/copilot/text-to-speech', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: data.response || '' })
+        });
+        const ttsData = await ttsRes.json();
+        if (ttsData.audioUrl) {
+          replyAudioUrl = ttsData.audioUrl;
+        }
+      } catch (err) {
+        console.error('Erro ao sintetizar áudio TTS:', err);
+      }
+
       const replyMsg: ChatMessage = {
         id: `m-reply-${Date.now()}`,
         sender: 'copilot',
         senderName: 'Iris AI',
         content: data.response || `Obrigado pelo seu retorno. Entrarei em contato em breve para confirmar o orçamento.`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        audioUrl: replyAudioUrl
       };
 
       setPatients(prev => prev.map(p => {
         if (p.id === selectedPatient.id) {
-          return {
+          const updated = {
             ...p,
             chatHistory: [...p.chatHistory, replyMsg]
           };
+          saveSinglePatientToIndexedDB(updated);
+          enqueueOfflineAction({ type: 'UPDATE_PATIENT', payload: updated });
+          return updated;
         }
         return p;
       }));
 
       // Speak response automatically if enabled
-      speakText(replyMsg.content);
+      if (isTtsEnabled && replyAudioUrl) {
+        const audio = new Audio(replyAudioUrl);
+        audio.play().catch(e => console.warn('Erro ao reproduzir voz:', e));
+      } else {
+        speakText(replyMsg.content);
+      }
 
     } catch (err) {
       console.error('Error generating chat reply:', err);
@@ -834,6 +1113,13 @@ export default function App() {
     setPatients(prev => [newPat, ...prev]);
     setSelectedId(newId);
     setShowAddModal(false);
+
+    // Salvar em IndexedDB e enfileirar ação offline
+    saveSinglePatientToIndexedDB(newPat);
+    enqueueOfflineAction({
+      type: 'UPDATE_PATIENT',
+      payload: newPat
+    });
 
     // Reset fields
     setNewPatientName('');
@@ -1144,6 +1430,18 @@ export default function App() {
             </div>
           </button>
         </header>
+
+        {/* BANNER DE STATUS DE REDE E SINCRONIZAÇÃO OFFLINE */}
+        {offlineSyncMessage && (
+          <div className={`px-5 py-2.5 text-xs font-bold text-center flex items-center justify-center gap-3 transition-all shrink-0 shadow-md ${
+            isNetworkOnline 
+              ? 'bg-emerald-500/20 border-b border-emerald-500/35 text-emerald-300 animate-in fade-in' 
+              : 'bg-amber-500/20 border-b border-amber-500/35 text-amber-300 animate-in fade-in'
+          }`}>
+            <Wifi className={`w-4 h-4 shrink-0 ${isNetworkOnline ? 'text-emerald-400' : 'text-amber-400 animate-pulse'}`} />
+            <span>{offlineSyncMessage}</span>
+          </div>
+        )}
 
         {/* MOBILE & PWA ORGANIZED QUICK ACTION BAR (lg:hidden) */}
         <div className="lg:hidden bg-slate-900 border-b border-slate-800 p-2 overflow-x-auto shrink-0 flex items-center gap-2 shadow-inner">
@@ -1751,6 +2049,17 @@ export default function App() {
                         }`}>
                           <p className="whitespace-pre-line">{chat.content}</p>
 
+                          {chat.audioUrl && (
+                            <div className="mt-2.5 pt-2 border-t border-amber-500/15 flex items-center gap-2">
+                              <audio 
+                                src={chat.audioUrl} 
+                                controls 
+                                className="w-full max-w-[210px] text-xs h-8 scale-90 -ml-2 filter invert brightness-90 bg-transparent rounded-lg focus:outline-none" 
+                              />
+                              <span className="text-[8px] text-slate-400 font-extrabold tracking-wider uppercase shrink-0">🎙️ Voz</span>
+                            </div>
+                          )}
+
                           {/* Interactive "Speak/Falar" helper button for Iris responses */}
                           {isCopilot && (
                             <button 
@@ -1871,12 +2180,26 @@ export default function App() {
                     onClick={toggleSpeechRecognition}
                     className={`p-2 rounded-lg transition-all cursor-pointer ${
                       isListening 
-                        ? 'bg-red-500 text-white animate-pulse' 
+                        ? 'bg-amber-500 text-slate-950 animate-pulse' 
                         : 'text-slate-450 hover:text-amber-400 hover:bg-amber-500/10'
                     }`}
-                    title={isListening ? "Gravando voz... Clique para parar." : "Digitar por Voz (Web Speech API)"}
+                    title={isListening ? "Gravando voz... Clique para parar." : "Ditado por Voz (Conversão Fala para Texto)"}
                   >
                     {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </button>
+
+                  {/* GRAVADOR DE VOZ REAL: Grava e envia áudio MP3/Webm no chat */}
+                  <button 
+                    type="button" 
+                    onClick={isRecordingAudio ? stopVoiceRecording : startVoiceRecording}
+                    className={`p-2 rounded-lg transition-all cursor-pointer ${
+                      isRecordingAudio 
+                        ? 'bg-emerald-500 text-slate-950 animate-pulse' 
+                        : 'text-slate-450 hover:text-emerald-400 hover:bg-emerald-500/10'
+                    }`}
+                    title={isRecordingAudio ? "Gravando áudio real... Clique para enviar mensagem de voz!" : "Gravar e Enviar Mensagem de Voz"}
+                  >
+                    {isRecordingAudio ? <MicOff className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                   </button>
 
                   <button

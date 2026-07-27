@@ -62,6 +62,23 @@ export async function savePatientsToIndexedDB(patients: any[]): Promise<boolean>
   }
 }
 
+// Save a single patient to IndexedDB
+export async function saveSinglePatientToIndexedDB(patient: any): Promise<boolean> {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_PATIENTS, 'readwrite');
+    const store = tx.objectStore(STORE_PATIENTS);
+    store.put(patient);
+    return new Promise((resolve) => {
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    });
+  } catch (err) {
+    console.warn('Erro ao salvar paciente no IndexedDB:', err);
+    return false;
+  }
+}
+
 // Get cached patients from IndexedDB
 export async function getPatientsFromIndexedDB(): Promise<any[]> {
   try {
