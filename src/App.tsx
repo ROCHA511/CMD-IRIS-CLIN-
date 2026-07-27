@@ -966,36 +966,49 @@ export default function App() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center font-sans overflow-hidden antialiased p-0 sm:p-2 md:p-3 lg:p-4 selection:bg-sky-200">
+    <div className="min-h-screen bg-[#070b16] text-slate-100 flex items-center justify-center font-sans overflow-hidden antialiased p-0 sm:p-2 md:p-3 selection:bg-amber-500/30 selection:text-amber-200">
       
-      {/* Immersive Icy Medical Background Canvas */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-[#cfe3fa] via-[#e5eefc] to-[#eef4fd] -z-10" />
+      {/* Fundo com Gradiente Radial e Luzes Douradas/Azuis */}
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#0f1d3a] via-[#080d1a] to-[#03060f] pointer-events-none -z-10" />
+      <div className="fixed top-0 left-1/4 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[140px] pointer-events-none -z-10 animate-pulse" />
+      <div className="fixed bottom-0 right-1/4 w-[600px] h-[600px] bg-sky-500/5 rounded-full blur-[160px] pointer-events-none -z-10" />
 
-      {/* Main Single-Screen Dashboard Grid */}
-      <div className="w-full max-w-[1440px] h-screen sm:h-[95vh] bg-white/70 backdrop-blur-md rounded-2xl border border-white/40 shadow-[0_12px_45px_rgba(30,58,138,0.12)] flex flex-col overflow-hidden relative">
+      {/* Painel Principal em Vidro Escuro com Borda Dourada Suave */}
+      <div className="w-full max-w-[1460px] h-screen sm:h-[96vh] bg-[#0c1326]/90 backdrop-blur-2xl rounded-2xl border border-amber-500/20 shadow-[0_20px_70px_rgba(0,0,0,0.8),0_0_40px_rgba(245,158,11,0.06)] flex flex-col overflow-hidden relative">
         
         {/* TOP COMPREHENSIVE BRANDING & HEADER BAR */}
-        <header className="h-[76px] px-6 border-b border-sky-100/60 bg-white/40 flex items-center justify-between shrink-0">
+        <header className="h-[76px] px-5 sm:px-6 border-b border-amber-500/20 bg-gradient-to-r from-[#091024] via-[#0d162d] to-[#091024] flex items-center justify-between shrink-0 shadow-md">
           
           {/* Logo & Clinical Niche Subheading */}
           <div className="flex items-center gap-3">
-            <div className="h-12 px-3 py-1 bg-gradient-to-r from-[#41d8e0] via-[#21c2cc] to-[#19abb4] rounded-xl border border-cyan-400/50 shadow-sm flex items-center gap-2 cursor-pointer hover:opacity-95 transition-all" onClick={() => setIsMobileDownloadOpen(true)}>
+            <div 
+              className="h-12 px-3.5 py-1 bg-gradient-to-r from-amber-500/20 via-sky-500/20 to-amber-500/20 rounded-xl border border-amber-400/40 shadow-[0_0_15px_rgba(245,158,11,0.15)] flex items-center gap-2 cursor-pointer hover:scale-[1.02] transition-all"
+              onClick={() => setIsMobileDownloadOpen(true)}
+            >
               <img 
                 src="/irisclin-official-banner.svg" 
                 alt="ÍrisClin SISTEMA WEB" 
-                className="h-9 w-auto object-contain"
+                className="h-9 w-auto object-contain drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]"
                 referrerPolicy="no-referrer"
               />
-              <span className="text-[9px] bg-slate-900/80 text-cyan-200 font-extrabold px-1.5 py-0.5 rounded border border-cyan-400/30 uppercase tracking-widest hidden sm:inline-block">
+              <span className="text-[9px] bg-amber-500/20 text-amber-300 font-black px-1.5 py-0.5 rounded border border-amber-400/40 uppercase tracking-widest hidden sm:inline-block">
                 WEB
               </span>
             </div>
-            <div className="hidden sm:block">
-              <div className="flex items-baseline gap-1.5">
-                <span className="font-display font-black text-slate-800 text-[18px] tracking-tight">ÍrisClin <span className="text-sky-600 font-normal">SISTEMA WEB</span></span>
-                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.2 rounded uppercase">Oficial</span>
+
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="font-display font-black text-white text-[18px] tracking-tight flex items-center gap-1.5">
+                  ÍrisClin <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-200 to-yellow-400 font-extrabold">SISTEMA WEB</span>
+                </span>
+                <span className="text-[9.5px] bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+                  OFICIAL
+                </span>
               </div>
-              <p className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold">Gestão Oftalmológica &amp; Atendimento WhatsApp Meta</p>
+              <p className="text-[9.5px] uppercase tracking-wider text-amber-200/70 font-semibold flex items-center gap-1.5 mt-0.5">
+                <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
+                Gestão Oftalmológica &amp; IA Meta WhatsApp
+              </p>
             </div>
           </div>
 
@@ -1289,15 +1302,16 @@ export default function App() {
         <div className="flex-1 flex overflow-hidden">
           
           {/* SIDEBAR RAIL: Minimalist control column */}
-          <aside className="w-[72px] border-r border-sky-100/50 bg-white/20 flex flex-col items-center py-6 justify-between shrink-0">
-            <div className="flex flex-col gap-4 w-full px-2">
-              <button className="w-12 h-12 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-md shadow-sky-600/25 transition-all mx-auto cursor-pointer" title="IRIS AI Conversas">
-                <Bot className="w-5 h-5" />
+          <aside className="w-[72px] border-r border-amber-500/20 bg-[#070c18] flex flex-col items-center py-5 justify-between shrink-0 shadow-lg">
+            <div className="flex flex-col gap-3.5 w-full px-2">
+              {/* Botão Bot Principal Dourado */}
+              <button className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-500 text-slate-950 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.3)] transition-all mx-auto cursor-pointer hover:scale-105" title="IRIS AI Conversas">
+                <Bot className="w-5 h-5 text-slate-950 font-bold" />
               </button>
 
               <button 
                 onClick={() => setShowDashboard(!showDashboard)}
-                className="w-12 h-12 rounded-xl text-slate-500 hover:text-sky-600 hover:bg-sky-50/50 flex items-center justify-center transition-all mx-auto cursor-pointer" 
+                className="w-11 h-11 rounded-2xl text-amber-300 bg-[#0c1326] hover:bg-amber-500/20 border border-amber-500/20 flex items-center justify-center transition-all mx-auto cursor-pointer" 
                 title="Estatísticas do CRM"
               >
                 <Grid className="w-5 h-5" />
@@ -1305,44 +1319,44 @@ export default function App() {
 
               <button 
                 onClick={handleOpenFinance}
-                className="w-12 h-12 rounded-xl text-emerald-600 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/50 flex items-center justify-center transition-all mx-auto cursor-pointer relative" 
+                className="w-11 h-11 rounded-2xl text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center transition-all mx-auto cursor-pointer relative" 
                 title="Área Financeira / Fluxo de Caixa"
               >
                 <DollarSign className="w-5 h-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
               </button>
 
               <button 
                 onClick={handleOpenOutreach}
-                className="w-12 h-12 rounded-xl text-amber-700 bg-amber-50 hover:bg-amber-100/80 border border-amber-200/60 flex items-center justify-center transition-all mx-auto cursor-pointer relative" 
+                className="w-11 h-11 rounded-2xl text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 flex items-center justify-center transition-all mx-auto cursor-pointer relative" 
                 title="Módulo de Disparos: Convites para Exame de Vista"
               >
-                <Megaphone className="w-5 h-5 text-amber-600" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-white animate-pulse" />
+                <Megaphone className="w-5 h-5 text-amber-400" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-[#070c18] animate-pulse" />
               </button>
 
               <button 
                 onClick={() => setIsWhatsAppMetaPreviewOpen(true)}
-                className="w-12 h-12 rounded-xl text-emerald-700 bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-300 flex items-center justify-center transition-all mx-auto cursor-pointer relative" 
+                className="w-11 h-11 rounded-2xl text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 flex items-center justify-center transition-all mx-auto cursor-pointer relative" 
                 title="Preview de Campanha Meta WhatsApp API"
               >
-                <Phone className="w-5 h-5 text-emerald-600" />
+                <Phone className="w-5 h-5 text-emerald-400" />
                 <span className="absolute bottom-1 right-1 w-2 h-2 bg-emerald-500 rounded-full" />
               </button>
 
               {/* BLOQUINHO DE NOTAS (Abaixo do telefone) - Lista de Todos os Pacientes com Busca por Nome ou CPF */}
               <button 
                 onClick={() => setIsPatientListOpen(true)}
-                className="w-12 h-12 rounded-xl text-amber-800 bg-amber-50 hover:bg-amber-100/90 border-2 border-amber-300 flex items-center justify-center transition-all mx-auto cursor-pointer relative shadow-xs hover:scale-105" 
+                className="w-11 h-11 rounded-2xl text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/40 flex items-center justify-center transition-all mx-auto cursor-pointer relative hover:scale-105" 
                 title="Bloquinho de Notas • Relação de Clientes (Busca por Nome ou CPF)"
               >
-                <ClipboardList className="w-5.5 h-5.5 text-amber-600" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-white animate-pulse" />
+                <ClipboardList className="w-5.5 h-5.5 text-amber-400" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-[#070c18] animate-pulse" />
               </button>
 
               <button 
                 onClick={() => setIsAgendaOpen(true)}
-                className="w-12 h-12 rounded-xl text-slate-600 bg-slate-50 hover:text-sky-600 hover:bg-sky-50 flex items-center justify-center transition-all mx-auto cursor-pointer" 
+                className="w-11 h-11 rounded-2xl text-slate-400 bg-[#0c1326] hover:text-amber-300 hover:bg-amber-500/20 border border-amber-500/10 flex items-center justify-center transition-all mx-auto cursor-pointer" 
                 title="Agenda Geral & Senhas do Dia"
               >
                 <Calendar className="w-5 h-5" />
@@ -1351,50 +1365,50 @@ export default function App() {
               {/* RELOGINHO (Lateral) - Pacientes Agendados para a Semana Confirmados */}
               <button 
                 onClick={() => setIsWeeklyAgendaOpen(true)}
-                className="w-12 h-12 rounded-xl text-sky-700 bg-sky-50 hover:bg-sky-100/90 border border-sky-300 flex items-center justify-center transition-all mx-auto cursor-pointer relative shadow-xs hover:scale-105" 
+                className="w-11 h-11 rounded-2xl text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 flex items-center justify-center transition-all mx-auto cursor-pointer relative hover:scale-105" 
                 title="Reloginho • Pacientes Agendados para a Semana (Confirmados)"
               >
-                <Clock className="w-5 h-5 text-sky-600" />
+                <Clock className="w-5 h-5 text-sky-400" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-sky-500 rounded-full" />
               </button>
 
               {/* DESEMPENHO DA EQUIPE & TAXA DE CONFIRMAÇÃO */}
               <button 
                 onClick={handleOpenTeamPerformance}
-                className="w-12 h-12 rounded-xl text-indigo-700 bg-indigo-50 hover:bg-indigo-100/90 border border-indigo-200 flex items-center justify-center transition-all mx-auto cursor-pointer relative shadow-xs hover:scale-105" 
+                className="w-11 h-11 rounded-2xl text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center transition-all mx-auto cursor-pointer relative hover:scale-105" 
                 title="Painel de Desempenho da Equipe e Taxa de Confirmação de Consultas"
               >
-                <BarChart3 className="w-5 h-5 text-indigo-600" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
+                <BarChart3 className="w-5 h-5 text-indigo-400" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#070c18]" />
               </button>
 
               {/* ANÁLISE IA DE EXAMES (OCT, CAMPO VISUAL, TONOMETRIA) */}
               <button 
                 onClick={() => setIsAiExamOpen(true)}
-                className="w-12 h-12 rounded-xl text-cyan-700 bg-cyan-50 hover:bg-cyan-100/90 border border-cyan-200 flex items-center justify-center transition-all mx-auto cursor-pointer relative shadow-xs hover:scale-105" 
+                className="w-11 h-11 rounded-2xl text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-200/30 flex items-center justify-center transition-all mx-auto cursor-pointer relative hover:scale-105" 
                 title="Análise Inteligente de Exames por IA (OCT, Campo Visual e Tonometria)"
               >
-                <Eye className="w-5 h-5 text-cyan-600 animate-pulse" />
+                <Eye className="w-5 h-5 text-cyan-400 animate-pulse" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-cyan-500 rounded-full" />
               </button>
 
               {/* SINCRONIZAÇÃO OFFLINE INDEXEDDB PWA */}
               <button 
                 onClick={() => setIsOfflineSyncOpen(true)}
-                className="w-12 h-12 rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center transition-all mx-auto cursor-pointer relative shadow-xs hover:scale-105" 
+                className="w-11 h-11 rounded-2xl text-emerald-400 bg-[#0c1326] hover:bg-emerald-500/20 border border-[#101f30] flex items-center justify-center transition-all mx-auto cursor-pointer relative hover:scale-105" 
                 title="Modo Offline PWA Avançado com Sincronização Local (IndexedDB)"
               >
-                <Wifi className="w-5 h-5 text-emerald-600" />
+                <Wifi className="w-5 h-5 text-emerald-400" />
                 <span className="absolute bottom-1 right-1 w-2 h-2 bg-emerald-500 rounded-full" />
               </button>
 
               <button 
                 onClick={() => setIsVoiceSettingsOpen(true)}
-                className="w-12 h-12 rounded-xl text-amber-600 bg-amber-50 hover:bg-amber-100 flex items-center justify-center transition-all mx-auto cursor-pointer relative hover:scale-105" 
+                className="w-11 h-11 rounded-2xl text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 flex items-center justify-center transition-all mx-auto cursor-pointer relative hover:scale-105" 
                 title="Opções de Voz da Iris (Animada, Acolhedora, Velocidade e Tom)"
               >
-                <Volume2 className="w-5 h-5 text-amber-600 animate-pulse" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-white" />
+                <Volume2 className="w-5 h-5 text-amber-400 animate-pulse" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-[#070c18]" />
               </button>
             </div>
 
@@ -1405,7 +1419,7 @@ export default function App() {
                   window.location.reload();
                 }
               }}
-              className="w-12 h-12 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-all mx-auto cursor-pointer" 
+              className="w-11 h-11 rounded-2xl text-slate-500 hover:text-red-400 hover:bg-red-500/10 border border-slate-800 flex items-center justify-center transition-all mx-auto cursor-pointer" 
               title="Reiniciar Banco do CRM"
             >
               <RotateCcw className="w-5 h-5" />
