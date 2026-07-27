@@ -127,6 +127,7 @@ export default function App() {
   // Optical editing parameters & Tab management
   const [isEditingMetrics, setIsEditingMetrics] = useState(false);
   const [activeTab, setActiveTab] = useState<'ficha' | 'parametros'>('ficha');
+  const [mobileActiveTab, setMobileActiveTab] = useState<'patients' | 'chat' | 'ficha'>('patients');
   const [showDashboard, setShowDashboard] = useState(true);
   const [isFinanceOpen, setIsFinanceOpen] = useState(false);
   const [isDossierOpen, setIsDossierOpen] = useState(false);
@@ -1427,20 +1428,60 @@ export default function App() {
           </aside>
 
           {/* MAIN PANELS WRAPPER */}
-          <main className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-0 overflow-hidden bg-slate-50/20">
+          <main className="flex-1 flex flex-col md:grid md:grid-cols-12 gap-0 overflow-hidden bg-transparent">
+
+            {/* MOBILE ACTION SWITCHER TABS */}
+            <div className="md:hidden flex bg-[#091024] border-b border-amber-500/20 p-2 gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => setMobileActiveTab('patients')}
+                className={`flex-1 py-2 text-center text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                  mobileActiveTab === 'patients'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/15'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-[#0c1326]'
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>Pacientes ({patients.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileActiveTab('chat')}
+                className={`flex-1 py-2 text-center text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                  mobileActiveTab === 'chat'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/15'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-[#0c1326]'
+                }`}
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Chat &amp; IA</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileActiveTab('ficha')}
+                className={`flex-1 py-2 text-center text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                  mobileActiveTab === 'ficha'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/15'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-[#0c1326]'
+                }`}
+              >
+                <ClipboardList className="w-3.5 h-3.5" />
+                <span>Ficha Clínica</span>
+              </button>
+            </div>
 
             {/* PANEL 1: LISTA DE PACIENTES (CRM Funnel) */}
-            <section className="md:col-span-3 border-r border-sky-100/50 flex flex-col bg-white/40 h-full overflow-hidden">
-              <div className="p-4 border-b border-sky-100/50 shrink-0">
+            <section className={`md:col-span-3 border-r border-amber-500/10 flex-col bg-[#070c18]/50 h-full overflow-hidden shrink-0 ${mobileActiveTab === 'patients' ? 'flex flex-1' : 'hidden md:flex'}`}>
+              <div className="p-4 border-b border-amber-500/10 shrink-0 bg-[#091022]/40">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-display font-extrabold text-[12px] text-slate-800 tracking-wider uppercase flex items-center gap-1.5">
-                    <UserCheck className="w-4 h-4 text-sky-600" />
+                  <h3 className="font-display font-extrabold text-[12.5px] text-amber-200 tracking-wider uppercase flex items-center gap-1.5">
+                    <UserCheck className="w-4 h-4 text-amber-400" />
                     Mosaico de Pacientes
                   </h3>
                   
                   <button 
                     onClick={() => setShowAddModal(true)}
-                    className="p-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-600 transition-all flex items-center gap-1 text-[11px] font-bold cursor-pointer border border-sky-200/40"
+                    className="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 transition-all flex items-center gap-1 text-[11px] font-black cursor-pointer border border-amber-500/30"
                     title="Adicionar Paciente"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -1454,10 +1495,10 @@ export default function App() {
                     <button
                       key={status}
                       onClick={() => setStatusFilter(status)}
-                      className={`text-[9.5px] px-2 py-1 rounded-lg font-bold transition-all shrink-0 cursor-pointer ${
+                      className={`text-[9.5px] px-2 py-1 rounded-lg font-extrabold transition-all shrink-0 cursor-pointer ${
                         statusFilter === status 
-                          ? 'bg-slate-800 text-white shadow-xs' 
-                          : 'bg-white/80 hover:bg-white text-slate-600 border border-slate-100'
+                          ? 'bg-amber-500 text-slate-950 font-black shadow-xs shadow-amber-500/10' 
+                          : 'bg-[#0c1326]/60 hover:bg-[#0c1326] text-slate-300 border border-amber-500/10'
                       }`}
                     >
                       {status}
@@ -1473,7 +1514,7 @@ export default function App() {
                     placeholder="Filtrar por nome ou mensagem..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full text-xs pl-9 pr-8 py-2 bg-white border border-sky-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 text-slate-700 placeholder-slate-400 font-medium"
+                    className="w-full text-xs pl-9 pr-8 py-2 bg-[#0c1326] border border-amber-500/15 rounded-xl focus:outline-none focus:ring-1 focus:ring-amber-500/35 text-slate-200 placeholder-slate-500 font-semibold"
                   />
                   {searchQuery && (
                     <button 
@@ -1496,18 +1537,21 @@ export default function App() {
                     return (
                       <div
                         key={p.id}
-                        onClick={() => setSelectedId(p.id)}
+                        onClick={() => {
+                          setSelectedId(p.id);
+                          setMobileActiveTab('chat');
+                        }}
                         className={`p-3 rounded-xl border transition-all cursor-pointer flex gap-3 relative overflow-hidden group ${
                           isActive 
-                            ? 'bg-white border-sky-200/80 shadow-md shadow-sky-100/30 ring-1 ring-sky-100' 
-                            : 'bg-white/50 border-transparent hover:bg-white/90 hover:border-sky-100'
+                            ? 'bg-[#0c1326]/90 border-amber-500/35 shadow-md shadow-amber-500/5 ring-1 ring-amber-500/20' 
+                            : 'bg-[#0c1326]/20 border-transparent hover:bg-[#0c1326]/60 hover:border-amber-500/15'
                         }`}
                       >
                         {/* Status bar marker */}
                         <div className={`absolute left-0 top-0 bottom-0 w-1 ${
                           p.status === 'Orçamento' ? 'bg-amber-400' :
                           p.status === 'Em Laboratório' ? 'bg-sky-400' :
-                          p.status === 'Para Retirada' ? 'bg-emerald-500' : 'bg-slate-300'
+                          p.status === 'Para Retirada' ? 'bg-emerald-500' : 'bg-slate-500'
                         }`} />
 
                         {/* Avatar */}
@@ -1515,17 +1559,17 @@ export default function App() {
                           <img 
                             src={p.avatar} 
                             alt={p.name} 
-                            className="w-9 h-9 rounded-full object-cover border border-slate-100"
+                            className="w-9 h-9 rounded-full object-cover border border-amber-500/10"
                           />
                           {p.online && (
-                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-[#0c1326]" />
                           )}
                         </div>
 
                         {/* Body summary */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-1">
-                            <h4 className={`text-xs font-bold truncate ${isActive ? 'text-sky-950' : 'text-slate-800'}`}>
+                            <h4 className={`text-xs font-bold truncate ${isActive ? 'text-amber-200' : 'text-slate-200'}`}>
                               {p.name}
                             </h4>
                             <span className="text-[8px] text-slate-400 font-mono shrink-0 font-medium">
@@ -1533,16 +1577,16 @@ export default function App() {
                             </span>
                           </div>
                           
-                          <p className="text-[10px] text-slate-500 truncate mt-0.5 font-medium">
+                          <p className="text-[10px] text-slate-400 truncate mt-0.5 font-medium">
                             {p.lastMessage}
                           </p>
 
                           <div className="flex items-center justify-between mt-2">
-                            <span className={`text-[8.5px] font-extrabold px-1.5 py-0.5 rounded ${
-                              p.status === 'Orçamento' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
-                              p.status === 'Em Laboratório' ? 'bg-sky-50 text-sky-700 border border-sky-100' :
-                              p.status === 'Para Retirada' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
-                              'bg-zinc-50 text-zinc-600 border border-zinc-100'
+                            <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded ${
+                              p.status === 'Orçamento' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/20' :
+                              p.status === 'Em Laboratório' ? 'bg-sky-500/15 text-sky-300 border border-sky-500/20' :
+                              p.status === 'Para Retirada' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20' :
+                              'bg-[#070c18] text-zinc-400 border border-slate-800'
                             }`}>
                               {p.status}
                             </span>
@@ -1556,7 +1600,7 @@ export default function App() {
                                     handleDeletePatient(p.id);
                                   }
                                 }}
-                                className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all shrink-0 cursor-pointer"
+                                className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0 cursor-pointer"
                                 title="Remover"
                               >
                                 <Trash2 className="w-3 h-3" />
@@ -1572,13 +1616,13 @@ export default function App() {
             </section>
 
             {/* PANEL 2: ACTIVE CONVERSATIONS & WHATSAPP SIMULATION */}
-            <section className="md:col-span-5 flex flex-col bg-slate-50/30 h-full overflow-hidden border-r border-sky-100/50">
+            <section className={`md:col-span-5 border-r border-amber-500/10 flex-col bg-[#070c18]/30 h-full overflow-hidden shrink-0 ${mobileActiveTab === 'chat' ? 'flex flex-1' : 'hidden md:flex'}`}>
               
               {/* Chat header area with indicators */}
-              <div className="px-5 py-3 border-b border-sky-100/50 bg-white/50 flex items-center justify-between shrink-0">
+              <div className="px-5 py-3 border-b border-amber-500/10 bg-[#091022]/40 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-800 text-[12px] uppercase font-extrabold tracking-wider font-display">Copiloto Clínico & WhatsApp</span>
-                  <span className="text-[9px] bg-sky-100 text-sky-700 font-bold px-1.5 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
+                  <span className="text-amber-200 text-[12px] uppercase font-extrabold tracking-wider font-display">Copiloto Clínico & WhatsApp</span>
+                  <span className="text-[9px] bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold px-1.5 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
                     <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
                     Iris AI Ativa
                   </span>
@@ -1591,63 +1635,63 @@ export default function App() {
                     type="checkbox" 
                     checked={isTtsEnabled} 
                     onChange={(e) => setIsTtsEnabled(e.target.checked)} 
-                    className="w-3 h-3 text-sky-500 rounded"
+                    className="w-3 h-3 text-amber-500 bg-slate-900 border-amber-500/25 rounded cursor-pointer"
                     title="Reprodução de voz da Iris"
                   />
                 </div>
               </div>
 
               {/* PATIENT CONTACT & DOSSIER (DOCIER) BAR */}
-              <div className="px-4 py-2.5 bg-gradient-to-r from-sky-50/80 via-white to-sky-50/80 border-b border-sky-100 flex items-center justify-between shrink-0 shadow-2xs">
+              <div className="px-4 py-2.5 bg-gradient-to-r from-[#0c1326]/60 via-[#0a1020]/80 to-[#0c1326]/60 border-b border-amber-500/10 flex items-center justify-between shrink-0 shadow-2xs">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="relative shrink-0">
                     <img 
                       src={selectedPatient.avatar} 
                       alt={selectedPatient.name} 
-                      className="w-9 h-9 rounded-full object-cover border-2 border-sky-200 shadow-3xs"
+                      className="w-9 h-9 rounded-full object-cover border-2 border-amber-500/20 shadow-3xs"
                     />
                     {selectedPatient.online && (
-                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-[#0a1020]" />
                     )}
                   </div>
                   
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h4 className="text-xs font-bold text-slate-800 truncate">
+                      <h4 className="text-xs font-bold text-amber-200 truncate">
                         {selectedPatient.name}
                       </h4>
-                      <span className="text-[9.5px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/60 shrink-0 font-mono flex items-center gap-1">
+                      <span className="text-[9.5px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 font-mono flex items-center gap-1">
                         <Phone className="w-2.5 h-2.5" />
                         {selectedPatient.phone || '(73) 9 8104-7390'}
                       </span>
                     </div>
-                    <p className="text-[9.5px] text-slate-500 truncate font-medium mt-0.5">
-                      {selectedPatient.age || 48} anos • Dr. Augusto Faro • <span className="font-semibold text-sky-700">{selectedPatient.status}</span>
+                    <p className="text-[9.5px] text-slate-400 truncate font-medium mt-0.5">
+                      {selectedPatient.age || 48} anos • Dr. Augusto Faro • <span className="font-semibold text-amber-400">{selectedPatient.status}</span>
                     </p>
                   </div>
                 </div>
 
-                {/* PROMINENT ACTION BUTTONS: CONVITES & DOSSIER / DOCIER */}
+                {/* PROMINENT ACTION BUTTONS: CONVITES & DOSSIER */}
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={handleOpenOutreach}
-                    className="px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl text-xs font-extrabold transition-all shadow-md shadow-emerald-950/20 flex items-center gap-1.5 cursor-pointer hover:scale-[1.03] active:scale-[0.97] shrink-0 border border-emerald-400/40"
+                    className="px-3 py-2 bg-gradient-to-r from-emerald-600/20 to-teal-700/20 hover:from-emerald-500/15 hover:to-teal-600/15 text-emerald-300 rounded-xl text-xs font-extrabold transition-all shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-[0.98] shrink-0 border border-emerald-500/20"
                     title="Enviar Convite de Exame de Vista via WhatsApp / Iris AI"
                   >
-                    <Megaphone className="w-3.5 h-3.5 text-emerald-200" />
+                    <Megaphone className="w-3.5 h-3.5 text-emerald-400" />
                     <span className="hidden sm:inline">Convite Exame</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setIsDossierOpen(true)}
-                    className="px-3.5 py-2 bg-gradient-to-r from-sky-600 via-sky-700 to-sky-800 hover:from-sky-700 hover:to-sky-900 text-white rounded-xl text-xs font-extrabold transition-all shadow-md shadow-sky-600/20 flex items-center gap-2 cursor-pointer hover:scale-[1.03] active:scale-[0.97] shrink-0 border border-sky-500/40"
-                    title="Abrir Módulo de Receitas e Exames (Docier)"
+                    className="px-3.5 py-2 bg-gradient-to-r from-amber-500/10 to-amber-600/10 hover:bg-amber-500/20 text-amber-300 rounded-xl text-xs font-extrabold transition-all shadow-md flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98] shrink-0 border border-amber-500/25"
+                    title="Abrir Módulo de Receitas e Exames"
                   >
-                    <Camera className="w-4 h-4 text-sky-200 animate-pulse" />
-                    <span>Docier / Dossiê</span>
-                    <span className="bg-white/20 text-white text-[9px] px-1.5 py-0.2 rounded-full font-bold font-mono">
+                    <Camera className="w-4 h-4 text-amber-400 animate-pulse" />
+                    <span>Dossiê</span>
+                    <span className="bg-amber-500/20 text-amber-300 text-[9px] px-1.5 py-0.2 rounded-full font-bold font-mono">
                       {selectedPatient.documents?.length || 2}
                     </span>
                   </button>
@@ -1655,7 +1699,7 @@ export default function App() {
               </div>
 
               {/* Chat Viewport */}
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 flex flex-col bg-white/20">
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 flex flex-col bg-[#070c18]/10">
                 {selectedPatient.chatHistory.map((chat) => {
                   const isCopilot = chat.sender === 'copilot';
                   const isSystem = chat.sender === 'system';
@@ -1665,7 +1709,7 @@ export default function App() {
                   if (isSystem) {
                     return (
                       <div key={chat.id} className="mx-auto text-center my-1.5 max-w-[90%]">
-                        <span className="text-[9.5px] bg-slate-200/80 text-slate-600 font-bold px-3 py-1 rounded-full border border-slate-300/30 shadow-2xs">
+                        <span className="text-[9.5px] bg-[#0c1326] text-amber-300/80 font-bold px-3 py-1 rounded-full border border-amber-500/10 shadow-2xs">
                           {chat.content}
                         </span>
                       </div>
@@ -1685,25 +1729,25 @@ export default function App() {
                           selectedPatient.avatar
                         } 
                         alt={chat.senderName} 
-                        className="w-7 h-7 rounded-full object-cover shrink-0 border border-sky-100 shadow-xs"
+                        className="w-7 h-7 rounded-full object-cover shrink-0 border border-amber-500/10 shadow-xs"
                       />
 
                       {/* Bubble */}
                       <div className="flex flex-col">
                         <div className="flex items-baseline gap-1.5 mb-0.5 justify-between">
-                          <span className={`text-[9.5px] font-extrabold ${isCopilot ? 'text-sky-600' : 'text-slate-600'}`}>
+                          <span className={`text-[9.5px] font-extrabold ${isCopilot ? 'text-amber-400' : 'text-slate-350'}`}>
                             {chat.senderName} {isCopilot && '✨'}
                           </span>
                           <span className="text-[8px] text-slate-400 font-medium">{chat.timestamp}</span>
                         </div>
                         
                         {/* Bubble background design */}
-                        <div className={`px-4 py-2.5 rounded-2xl text-xs font-medium leading-relaxed shadow-3xs group relative ${
+                        <div className={`px-4 py-2.5 rounded-2xl text-xs font-semibold leading-relaxed shadow-3xs group relative ${
                           isAdmin 
-                            ? 'bg-[#3a9ad9] text-white rounded-tr-none' 
+                            ? 'bg-amber-500 text-slate-950 rounded-tr-none font-bold' 
                             : isCopilot 
-                            ? 'bg-sky-50 border border-sky-100 text-sky-950 rounded-tl-none ring-1 ring-sky-50/50'
-                            : 'bg-white border border-sky-100 text-slate-700 rounded-tl-none'
+                            ? 'bg-[#0c1326] border border-amber-500/15 text-slate-250 rounded-tl-none ring-1 ring-amber-500/5'
+                            : 'bg-[#121c38]/40 border border-amber-500/10 text-slate-300 rounded-tl-none'
                         }`}>
                           <p className="whitespace-pre-line">{chat.content}</p>
 
@@ -1711,7 +1755,7 @@ export default function App() {
                           {isCopilot && (
                             <button 
                               onClick={() => speakText(chat.content)}
-                              className="absolute -right-7 top-1/2 -translate-y-1/2 p-1 bg-white hover:bg-sky-50 rounded-md border border-sky-100 text-sky-600 cursor-pointer transition-all shadow-3xs"
+                              className="absolute -right-7 top-1/2 -translate-y-1/2 p-1 bg-[#0c1326] hover:bg-amber-500/10 rounded-md border border-amber-500/20 text-amber-450 cursor-pointer transition-all shadow-3xs"
                               title="Ouvir Resposta de Voz"
                             >
                               <Volume2 className="w-3 h-3" />
@@ -1725,27 +1769,27 @@ export default function App() {
 
                 {isChatting && (
                   <div className="flex gap-2.5 max-w-[80%] mr-auto items-center">
-                    <div className="w-7 h-7 rounded-full bg-sky-100 border border-sky-200 flex items-center justify-center font-bold text-[10px] text-sky-600 shrink-0">
+                    <div className="w-7 h-7 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center font-bold text-[10px] text-amber-300 shrink-0">
                       I
                     </div>
-                    <div className="px-4 py-2.5 bg-sky-50 border border-sky-100 text-sky-700 rounded-2xl rounded-tl-none text-xs flex gap-1 items-center font-bold">
+                    <div className="px-4 py-2.5 bg-[#0c1326] border border-amber-500/15 text-slate-300 rounded-2xl rounded-tl-none text-xs flex gap-1 items-center font-bold">
                       <span>Iris está digitando</span>
-                      <span className="w-1 h-1 bg-sky-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-1 h-1 bg-sky-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-1 h-1 bg-sky-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <span className="w-1 h-1 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1 h-1 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1 h-1 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
                   </div>
                 )}
                 
                 {/* Upload loading indicator */}
                 {uploadProgress !== null && (
-                  <div className="mx-auto bg-white border border-sky-100 p-3 rounded-xl shadow-md text-center max-w-[80%] my-2">
-                    <p className="text-[10px] text-slate-500 font-bold mb-1.5 flex items-center justify-center gap-1.5">
-                      <Paperclip className="w-3.5 h-3.5 text-sky-500 animate-spin" />
-                      Extraindo dados de: <span className="text-sky-600 font-mono">{uploadedFileName}</span>
+                  <div className="mx-auto bg-[#0c1326] border border-amber-500/10 p-3 rounded-xl shadow-md text-center max-w-[80%] my-2">
+                    <p className="text-[10px] text-slate-400 font-bold mb-1.5 flex items-center justify-center gap-1.5">
+                      <Paperclip className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+                      Extraindo dados de: <span className="text-amber-300 font-mono">{uploadedFileName}</span>
                     </p>
-                    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="bg-sky-500 h-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                    <div className="w-full h-1.5 bg-[#070c18] rounded-full overflow-hidden">
+                      <div className="bg-amber-500 h-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
                     </div>
                   </div>
                 )}
@@ -1762,15 +1806,15 @@ export default function App() {
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 15 }}
-                      className="absolute bottom-[105%] left-4 bg-white rounded-xl shadow-xl border border-sky-100 p-2.5 z-20 w-64 space-y-1.5"
+                      className="absolute bottom-[105%] left-4 bg-[#0c1326] rounded-xl shadow-xl border border-amber-500/20 p-2.5 z-20 w-64 space-y-1.5"
                     >
-                      <h5 className="text-[10px] font-bold uppercase text-slate-400 tracking-wide px-2 py-0.5">Simular Upload de Documentos</h5>
+                      <h5 className="text-[10px] font-bold uppercase text-slate-350 tracking-wide px-2 py-0.5">Simular Upload de Documentos</h5>
                       
                       <button 
                         onClick={() => handleMockUpload('receita_medica.jpg')}
-                        className="w-full text-left text-xs p-2 hover:bg-sky-50/50 rounded-lg flex items-center gap-2 text-slate-700 font-semibold transition-all cursor-pointer"
+                        className="w-full text-left text-xs p-2 hover:bg-amber-500/10 rounded-lg flex items-center gap-2 text-slate-200 font-semibold transition-all cursor-pointer border border-transparent hover:border-amber-500/15"
                       >
-                        <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                        <FileText className="w-3.5 h-3.5 text-indigo-400 font-bold" />
                         <div>
                           <p className="text-xs leading-none">Receita Médica (imagem)</p>
                           <span className="text-[8.5px] text-slate-400">Extrator Inteligente de Grau</span>
@@ -1779,9 +1823,9 @@ export default function App() {
 
                       <button 
                         onClick={() => handleMockUpload('armação_escolhida.png')}
-                        className="w-full text-left text-xs p-2 hover:bg-sky-50/50 rounded-lg flex items-center gap-2 text-slate-700 font-semibold transition-all cursor-pointer"
+                        className="w-full text-left text-xs p-2 hover:bg-amber-500/10 rounded-lg flex items-center gap-2 text-slate-200 font-semibold transition-all cursor-pointer border border-transparent hover:border-amber-500/15"
                       >
-                        <Glasses className="w-3.5 h-3.5 text-amber-500" />
+                        <Glasses className="w-3.5 h-3.5 text-amber-400" />
                         <div>
                           <p className="text-xs leading-none">Foto de Armação (PNG)</p>
                           <span className="text-[8.5px] text-slate-400">Visão Computacional de Estilo</span>
@@ -1790,9 +1834,9 @@ export default function App() {
 
                       <button 
                         onClick={() => handleMockUpload('comprovante_pix.pdf')}
-                        className="w-full text-left text-xs p-2 hover:bg-sky-50/50 rounded-lg flex items-center gap-2 text-slate-700 font-semibold transition-all cursor-pointer"
+                        className="w-full text-left text-xs p-2 hover:bg-amber-500/10 rounded-lg flex items-center gap-2 text-slate-200 font-semibold transition-all cursor-pointer border border-transparent hover:border-amber-500/15"
                       >
-                        <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+                        <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
                         <div>
                           <p className="text-xs leading-none">Comprovante PIX (PDF)</p>
                           <span className="text-[8.5px] text-slate-400">Baixa automática no CRM</span>
@@ -1802,12 +1846,12 @@ export default function App() {
                   )}
                 </AnimatePresence>
 
-                <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-sky-100/50 flex items-center gap-2 shrink-0">
+                <form onSubmit={handleSendMessage} className="p-3 bg-[#0c1326]/90 border-t border-amber-500/10 flex items-center gap-2 shrink-0">
                   {/* Media attachment button */}
                   <button 
                     type="button" 
                     onClick={() => setShowUploadMenu(!showUploadMenu)}
-                    className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all cursor-pointer" 
+                    className="p-2 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 rounded-lg transition-all cursor-pointer" 
                     title="Enviar Fotos ou Arquivos para Análise"
                   >
                     <Paperclip className="w-4 h-4" />
@@ -1818,7 +1862,7 @@ export default function App() {
                     placeholder={`Conversar com ${selectedPatient.name}...`}
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    className="flex-1 bg-white border border-sky-100 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500/20 text-slate-700 font-medium"
+                    className="flex-1 bg-[#070c18] border border-amber-500/15 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500/35 text-slate-200 font-semibold placeholder-slate-500"
                   />
 
                   {/* SPEECH API: Microphone toggle dictation button */}
@@ -1828,7 +1872,7 @@ export default function App() {
                     className={`p-2 rounded-lg transition-all cursor-pointer ${
                       isListening 
                         ? 'bg-red-500 text-white animate-pulse' 
-                        : 'text-slate-400 hover:text-sky-600 hover:bg-sky-50'
+                        : 'text-slate-450 hover:text-amber-400 hover:bg-amber-500/10'
                     }`}
                     title={isListening ? "Gravando voz... Clique para parar." : "Digitar por Voz (Web Speech API)"}
                   >
@@ -1838,7 +1882,7 @@ export default function App() {
                   <button
                     type="submit"
                     disabled={!chatInput.trim() || isChatting}
-                    className="p-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white disabled:opacity-40 transition-all cursor-pointer shadow-xs shrink-0"
+                    className="p-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:bg-[#070c18] text-slate-950 disabled:text-slate-500 disabled:opacity-40 transition-all cursor-pointer shadow-xs shrink-0 font-bold"
                   >
                     <Send className="w-3.5 h-3.5" />
                   </button>
@@ -1846,13 +1890,13 @@ export default function App() {
               </div>
 
               {/* CHRONOLOGICAL TIMELINE & INTEGRATED SCHEDULER */}
-              <div className="border-t border-sky-100/50 bg-white/40 p-4 shrink-0 grid grid-cols-12 gap-4">
+              <div className="border-t border-amber-500/10 bg-[#091022]/40 p-4 shrink-0 grid grid-cols-12 gap-4">
                 
                 {/* TIMELINE */}
-                <div className="col-span-7 border-r border-sky-100/40 pr-3 flex flex-col justify-between">
+                <div className="col-span-7 border-r border-amber-500/10 pr-3 flex flex-col justify-between">
                   <div>
-                    <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 mb-2.5 flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-sky-600" />
+                    <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-slate-350 mb-2.5 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-amber-400" />
                       Histórico e Logs
                     </h4>
 
@@ -1860,10 +1904,10 @@ export default function App() {
                       {selectedPatient.timeline.map((evt) => (
                         <div key={evt.id} className="flex gap-2.5 items-start relative">
                           <div className={`w-5 h-5 rounded-full shrink-0 border flex items-center justify-center ${
-                            evt.iconType === 'prescription' ? 'bg-amber-50 border-amber-200 text-amber-600' :
-                            evt.iconType === 'dilation' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' :
-                            evt.iconType === 'calendar' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' :
-                            'bg-sky-50 border-sky-200 text-sky-600'
+                            evt.iconType === 'prescription' ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' :
+                            evt.iconType === 'dilation' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300' :
+                            evt.iconType === 'calendar' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' :
+                            'bg-amber-500/10 border-amber-500/20 text-amber-300'
                           }`}>
                             {evt.iconType === 'prescription' && <FileText className="w-2.5 h-2.5" />}
                             {evt.iconType === 'dilation' && <Eye className="w-2.5 h-2.5" />}
@@ -1873,7 +1917,7 @@ export default function App() {
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <p className="text-[11px] font-bold text-slate-800 truncate">{evt.title}</p>
+                            <p className="text-[11px] font-bold text-slate-200 truncate">{evt.title}</p>
                             <span className="text-[8.5px] text-slate-400 font-mono">{evt.time}</span>
                           </div>
                         </div>
@@ -1885,12 +1929,12 @@ export default function App() {
                 {/* SCHEDULER: Quick Return scheduling */}
                 <div className="col-span-5 flex flex-col justify-between">
                   <div>
-                    <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-sky-600" />
+                    <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-slate-355 mb-2 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-amber-400" />
                       Agendar Consulta de Retorno
                     </h4>
 
-                    <div className="flex items-center justify-between text-[9px] font-bold text-slate-700 bg-slate-100 rounded p-1 mb-1.5 select-none">
+                    <div className="flex items-center justify-between text-[9px] font-bold text-slate-300 bg-[#0c1326] border border-amber-500/10 rounded p-1 mb-1.5 select-none">
                       <span>Julho 2026</span>
                       <span className="text-slate-400">Selecione</span>
                     </div>
@@ -1905,8 +1949,8 @@ export default function App() {
                             onClick={() => setSelectedDay(day)}
                             className={`p-0.5 text-[8.5px] font-bold rounded-sm cursor-pointer transition-all ${
                               isSelected 
-                                ? 'bg-sky-600 text-white shadow-3xs' 
-                                : 'bg-white text-slate-600 hover:bg-sky-50 border border-slate-100'
+                                ? 'bg-amber-500 text-slate-950 font-black shadow-3xs' 
+                                : 'bg-[#0c1326] text-slate-300 hover:bg-amber-500/10 border border-amber-500/10'
                             }`}
                           >
                             {day}
@@ -1920,18 +1964,18 @@ export default function App() {
                     <select
                       value={selectedTime}
                       onChange={(e) => setSelectedTime(e.target.value)}
-                      className="text-[9.5px] bg-white border border-sky-100 rounded p-1 font-bold text-slate-700 focus:outline-none flex-1"
+                      className="text-[9.5px] bg-[#0c1326] border border-amber-500/20 rounded p-1 font-bold text-slate-250 focus:outline-none flex-1"
                     >
                       <option value="09:00 AM">09:00 AM</option>
                       <option value="10:30 AM">10:30 AM</option>
                       <option value="11:30 AM">11:30 AM</option>
                       <option value="02:00 PM">02:00 PM</option>
                       <option value="03:30 PM">03:30 PM</option>
-                    </select>
+                      </select>
                     
                     <button
                       onClick={handleScheduleAppointment}
-                      className="text-[9px] font-extrabold bg-slate-800 hover:bg-slate-950 text-white px-2.5 py-1 rounded transition-all shrink-0 cursor-pointer"
+                      className="text-[9px] font-black bg-amber-500 hover:bg-amber-600 text-slate-950 px-2.5 py-1 rounded transition-all shrink-0 cursor-pointer shadow-sm"
                     >
                       Marcar
                     </button>
@@ -1942,16 +1986,16 @@ export default function App() {
             </section>
 
             {/* PANEL 3: DADOS ÓPTICOS, PARÂMETROS & MEMÓRIA DA IRIS */}
-            <section className="md:col-span-4 flex flex-col bg-white/30 h-full overflow-hidden">
+            <section className={`md:col-span-4 border-l border-amber-500/10 flex-col bg-[#070c18]/30 h-full overflow-hidden shrink-0 ${mobileActiveTab === 'ficha' ? 'flex flex-1' : 'hidden md:flex'}`}>
               
               {/* Tab Selector */}
-              <div className="flex border-b border-sky-100/50 shrink-0 bg-slate-50/50">
+              <div className="flex border-b border-amber-500/10 shrink-0 bg-[#091022]/40">
                 <button
                   onClick={() => setActiveTab('ficha')}
                   className={`flex-1 text-center py-3 text-[11px] uppercase font-extrabold tracking-wider transition-all cursor-pointer ${
                     activeTab === 'ficha' 
-                      ? 'border-b-2 border-sky-600 text-sky-950 bg-white font-bold' 
-                      : 'text-slate-400 hover:text-slate-700 font-semibold'
+                      ? 'border-b-2 border-amber-500 text-amber-200 bg-[#070c18]/40 font-black' 
+                      : 'text-slate-450 hover:text-slate-200 hover:bg-[#0c1326]/40 font-bold'
                   }`}
                 >
                   Ficha do Cérebro (Memória)
@@ -1960,25 +2004,25 @@ export default function App() {
                   onClick={() => setActiveTab('parametros')}
                   className={`flex-1 text-center py-3 text-[11px] uppercase font-extrabold tracking-wider transition-all cursor-pointer ${
                     activeTab === 'parametros' 
-                      ? 'border-b-2 border-sky-600 text-sky-950 bg-white font-bold' 
-                      : 'text-slate-400 hover:text-slate-700 font-semibold'
+                      ? 'border-b-2 border-amber-500 text-amber-200 bg-[#070c18]/40 font-black' 
+                      : 'text-slate-450 hover:text-slate-200 hover:bg-[#0c1326]/40 font-bold'
                   }`}
                 >
                   Graus & Parâmetros
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-transparent">
                 
                 {activeTab === 'ficha' ? (
                   /* TAB 1: IRIS BRAIN PERMANENT MEMORY & AUTOMATIONS */
                   <div className="space-y-4">
                     
                     {/* Basic Patient Personal Identity Details */}
-                    <div className="bg-white/80 p-3.5 rounded-2xl border border-sky-100/50 shadow-3xs space-y-3">
-                      <div className="flex items-center justify-between pb-1.5 border-b border-sky-50">
-                        <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 flex items-center gap-1.5">
-                          <UserIcon className="w-3.5 h-3.5 text-sky-600" />
+                    <div className="bg-[#0c1326]/60 p-3.5 rounded-2xl border border-amber-500/10 shadow-3xs space-y-3">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-amber-500/10">
+                        <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-amber-200 flex items-center gap-1.5">
+                          <UserIcon className="w-3.5 h-3.5 text-amber-400" />
                           Memória Permanente do Paciente
                         </h4>
                         
@@ -1986,20 +2030,20 @@ export default function App() {
                           <button
                             type="button"
                             onClick={handleOpenOutreach}
-                            className="px-2 py-0.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded-md text-[10px] font-extrabold transition-all flex items-center gap-1 cursor-pointer border border-emerald-200/80 shadow-3xs"
+                            className="px-2 py-0.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 rounded-md text-[10px] font-extrabold transition-all flex items-center gap-1 cursor-pointer border border-emerald-500/20 shadow-3xs"
                             title="Módulo de Disparo de Convite para Exame de Vista"
                           >
-                            <Megaphone className="w-3 h-3 text-emerald-700" />
+                            <Megaphone className="w-3 h-3 text-emerald-400" />
                             <span>Convite Exame</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => setIsDossierOpen(true)}
-                            className="px-2 py-0.5 bg-sky-100 hover:bg-sky-200 text-sky-800 rounded-md text-[10px] font-extrabold transition-all flex items-center gap-1 cursor-pointer border border-sky-200/80 shadow-3xs"
+                            className="px-2 py-0.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 rounded-md text-[10px] font-extrabold transition-all flex items-center gap-1 cursor-pointer border border-amber-500/20 shadow-3xs"
                             title="Ver Dossiê, Receitas e Exames"
                           >
-                            <Camera className="w-3 h-3 text-sky-600" />
-                            <span>Docier (Dossiê)</span>
+                            <Camera className="w-3 h-3 text-amber-400" />
+                            <span>Dossiê</span>
                           </button>
                         </div>
                       </div>
@@ -2011,7 +2055,7 @@ export default function App() {
                             type="text" 
                             value={selectedPatient.name} 
                             onChange={(e) => handleUpdateProfileField('name', e.target.value)}
-                            className="font-bold text-slate-800 bg-transparent border-b border-transparent focus:border-sky-300 focus:outline-none w-full py-0.5"
+                            className="font-bold text-amber-250 bg-transparent border-b border-transparent focus:border-amber-500/30 focus:outline-none w-full py-0.5"
                           />
                         </div>
 
@@ -2021,7 +2065,7 @@ export default function App() {
                             type="text" 
                             value={selectedPatient.profession || 'Não Informada'} 
                             onChange={(e) => handleUpdateProfileField('profession', e.target.value)}
-                            className="font-semibold text-slate-700 bg-transparent border-b border-transparent focus:border-sky-300 focus:outline-none w-full py-0.5"
+                            className="font-semibold text-slate-200 bg-transparent border-b border-transparent focus:border-amber-500/30 focus:outline-none w-full py-0.5"
                           />
                         </div>
 
@@ -2031,7 +2075,7 @@ export default function App() {
                             type="number" 
                             value={selectedPatient.age || 0} 
                             onChange={(e) => handleUpdateProfileField('age', parseInt(e.target.value) || 0)}
-                            className="font-semibold text-slate-700 bg-transparent border-b border-transparent focus:border-sky-300 focus:outline-none w-full py-0.5"
+                            className="font-semibold text-slate-200 bg-transparent border-b border-transparent focus:border-amber-500/30 focus:outline-none w-full py-0.5"
                           />
                         </div>
 
@@ -2041,20 +2085,20 @@ export default function App() {
                             type="text" 
                             value={selectedPatient.city || 'Não Informada'} 
                             onChange={(e) => handleUpdateProfileField('city', e.target.value)}
-                            className="font-semibold text-slate-700 bg-transparent border-b border-transparent focus:border-sky-300 focus:outline-none w-full py-0.5"
+                            className="font-semibold text-slate-200 bg-transparent border-b border-transparent focus:border-amber-500/30 focus:outline-none w-full py-0.5"
                           />
                         </div>
                       </div>
 
                       {/* Advanced clinical records */}
-                      <div className="border-t border-sky-50/50 pt-2.5 space-y-2">
+                      <div className="border-t border-amber-500/10 pt-2.5 space-y-2">
                         <div>
                           <span className="text-[9px] text-slate-400 font-extrabold block uppercase">Óculos Anterior (Histórico):</span>
                           <input 
                             type="text" 
                             value={selectedPatient.previousGlasses || 'Nenhum registro'} 
                             onChange={(e) => handleUpdateProfileField('previousGlasses', e.target.value)}
-                            className="text-xs text-slate-700 bg-transparent border-b border-transparent focus:border-sky-300 focus:outline-none w-full font-medium"
+                            className="text-xs text-slate-200 bg-transparent border-b border-transparent focus:border-amber-500/30 focus:outline-none w-full font-semibold"
                           />
                         </div>
 
@@ -2064,7 +2108,7 @@ export default function App() {
                             type="text" 
                             value={selectedPatient.eyeDiseases || 'Nenhuma patologia'} 
                             onChange={(e) => handleUpdateProfileField('eyeDiseases', e.target.value)}
-                            className="text-xs text-slate-700 bg-transparent border-b border-transparent focus:border-sky-300 focus:outline-none w-full font-medium"
+                            className="text-xs text-slate-200 bg-transparent border-b border-transparent focus:border-amber-500/30 focus:outline-none w-full font-semibold"
                           />
                         </div>
 
@@ -2074,16 +2118,16 @@ export default function App() {
                             type="text" 
                             value={selectedPatient.allergies || 'Nenhuma'} 
                             onChange={(e) => handleUpdateProfileField('allergies', e.target.value)}
-                            className="text-xs text-slate-700 bg-transparent border-b border-transparent focus:border-sky-300 focus:outline-none w-full font-medium"
+                            className="text-xs text-slate-200 bg-transparent border-b border-transparent focus:border-amber-500/30 focus:outline-none w-full font-semibold"
                           />
                         </div>
                       </div>
                     </div>
 
                     {/* CRM Funnel Controls */}
-                    <div className="bg-white/80 p-3.5 rounded-2xl border border-sky-100/50 shadow-3xs space-y-3">
-                      <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 flex items-center gap-1.5 pb-1 border-b border-sky-50">
-                        <Sliders className="w-3.5 h-3.5 text-sky-600" />
+                    <div className="bg-[#0c1326]/60 p-3.5 rounded-2xl border border-amber-500/10 shadow-3xs space-y-3">
+                      <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-amber-200 flex items-center gap-1.5 pb-1 border-b border-amber-500/10">
+                        <Sliders className="w-3.5 h-3.5 text-amber-400" />
                         Estágio do Funil (CRM)
                       </h4>
 
@@ -2099,7 +2143,7 @@ export default function App() {
                               const mainStatus: Patient['status'] = v === 'Orçamento' ? 'Orçamento' : v === 'Fechamento' ? 'Em Laboratório' : v === 'Pós-Venda' ? 'Para Retirada' : 'Sem Pendências';
                               handleUpdateProfileField('status', mainStatus);
                             }}
-                            className="text-xs bg-slate-100 border border-slate-200 rounded p-1 font-bold text-slate-800 focus:outline-none w-full"
+                            className="text-xs bg-[#0c1326] border border-amber-500/15 rounded p-1 font-bold text-slate-200 focus:outline-none w-full"
                           >
                             <option value="Lead">Lead inicial</option>
                             <option value="Orçamento">Orçamento pendente</option>
@@ -2117,18 +2161,18 @@ export default function App() {
                               max="100" 
                               value={selectedPatient.purchaseProbability || 50} 
                               onChange={(e) => handleUpdateProfileField('purchaseProbability', parseInt(e.target.value))}
-                              className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-sky-600"
+                              className="w-full h-1.5 bg-[#070c18] rounded-lg appearance-none cursor-pointer accent-amber-500"
                             />
-                            <span className="font-mono text-xs font-bold text-slate-700">{selectedPatient.purchaseProbability || 50}%</span>
+                            <span className="font-mono text-xs font-bold text-amber-250">{selectedPatient.purchaseProbability || 50}%</span>
                           </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Meta WhatsApp Integration Automated Triggers */}
-                    <div className="bg-white/80 p-3.5 rounded-2xl border border-sky-100/50 shadow-3xs space-y-3">
-                      <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 flex items-center gap-1.5 pb-1 border-b border-sky-50">
-                        <Share2 className="w-3.5 h-3.5 text-sky-600" />
+                    <div className="bg-[#0c1326]/60 p-3.5 rounded-2xl border border-amber-500/10 shadow-3xs space-y-3">
+                      <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-amber-200 flex items-center gap-1.5 pb-1 border-b border-amber-500/10">
+                        <Share2 className="w-3.5 h-3.5 text-amber-400" />
                         Disparos Oficiais WhatsApp (Meta)
                       </h4>
 
@@ -2136,11 +2180,11 @@ export default function App() {
                         {/* Action 1 */}
                         <button 
                           onClick={() => handleWhatsAppTrigger('send_pix')}
-                          className="text-[10px] text-left p-2 border border-slate-100 hover:border-sky-300 hover:bg-sky-50/20 rounded-xl flex items-center gap-2 font-bold text-slate-700 cursor-pointer transition-all"
+                          className="text-[10px] text-left p-2 border border-amber-500/10 hover:border-amber-500/35 hover:bg-[#0c1326] rounded-xl flex items-center gap-2 font-extrabold text-slate-200 cursor-pointer transition-all bg-[#0a1020]/40"
                         >
-                          <DollarSign className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <DollarSign className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                           <div>
-                            <p className="leading-none">Enviar PIX / Link</p>
+                            <p className="leading-none text-slate-200">Enviar PIX / Link</p>
                             <span className="text-[8px] font-normal text-slate-400">Cobrança Direta</span>
                           </div>
                         </button>
@@ -2148,48 +2192,36 @@ export default function App() {
                         {/* Action 2 */}
                         <button 
                           onClick={() => handleWhatsAppTrigger('send_budget_pdf')}
-                          className="text-[10px] text-left p-2 border border-slate-100 hover:border-sky-300 hover:bg-sky-50/20 rounded-xl flex items-center gap-2 font-bold text-slate-700 cursor-pointer transition-all"
+                          className="text-[10px] text-left p-2 border border-amber-500/10 hover:border-amber-500/35 hover:bg-[#0c1326] rounded-xl flex items-center gap-2 font-extrabold text-slate-200 cursor-pointer transition-all bg-[#0a1020]/40"
                         >
-                          <FileText className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                          <FileText className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                           <div>
-                            <p className="leading-none">Gerar PDF Orçamento</p>
+                            <p className="leading-none text-slate-200">Gerar PDF Orçamento</p>
                             <span className="text-[8px] font-normal text-slate-400">Layout ÍrisClin</span>
                           </div>
                         </button>
 
                         {/* Action 3 */}
                         <button 
-                          onClick={() => handleWhatsAppTrigger('send_ready_alert')}
-                          className="text-[10px] text-left p-2 border border-slate-100 hover:border-sky-300 hover:bg-sky-50/20 rounded-xl flex items-center gap-2 font-bold text-slate-700 cursor-pointer transition-all"
+                          onClick={() => handleWhatsAppTrigger('send_nps_survey')}
+                          className="text-[10px] text-left p-2 border border-amber-500/10 hover:border-amber-500/35 hover:bg-[#0c1326] rounded-xl flex items-center gap-2 font-extrabold text-slate-200 cursor-pointer transition-all bg-[#0a1020]/40"
                         >
-                          <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <Award className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
                           <div>
-                            <p className="leading-none">Alerta Óculos Pronto</p>
-                            <span className="text-[8px] font-normal text-slate-400">Aviso de Retirada</span>
+                            <p className="leading-none text-slate-200">Disparar NPS 0-10</p>
+                            <span className="text-[8px] font-normal text-slate-400">Pós-venda Inteligente</span>
                           </div>
                         </button>
 
                         {/* Action 4 */}
                         <button 
-                          onClick={() => handleWhatsAppTrigger('send_nps_survey')}
-                          className="text-[10px] text-left p-2 border border-slate-100 hover:border-sky-300 hover:bg-sky-50/20 rounded-xl flex items-center gap-2 font-bold text-slate-700 cursor-pointer transition-all"
-                        >
-                          <Award className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
-                          <div>
-                            <p className="leading-none">Disparar NPS 0-10</p>
-                            <span className="text-[8px] font-normal text-slate-400">Pós-venda Inteligente</span>
-                          </div>
-                        </button>
-
-                        {/* Action 5 */}
-                        <button 
                           onClick={() => handleWhatsAppTrigger('send_location')}
-                          className="text-[10px] text-left p-2 border border-slate-100 hover:border-sky-300 hover:bg-sky-50/20 rounded-xl flex items-center gap-2 font-bold text-slate-700 cursor-pointer transition-all col-span-1 sm:col-span-2"
+                          className="text-[10px] text-left p-2 border border-amber-500/10 hover:border-amber-500/35 hover:bg-[#0c1326] rounded-xl flex items-center gap-2 font-extrabold text-slate-200 cursor-pointer transition-all bg-[#0a1020]/40"
                         >
-                          <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                          <MapPin className="w-3.5 h-3.5 text-red-400 shrink-0" />
                           <div>
-                            <p className="leading-none">Enviar Localização da Clínica</p>
-                            <span className="text-[8px] font-normal text-slate-400">Av. Paulista, 1000 - São Paulo</span>
+                            <p className="leading-none text-slate-200">Enviar Localização</p>
+                            <span className="text-[8px] font-normal text-slate-400">Av. Paulista, 1000 - SP</span>
                           </div>
                         </button>
                       </div>
@@ -2205,26 +2237,26 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => setActiveTab('ficha')}
-                        className="px-3 py-1 bg-sky-100 hover:bg-sky-200 text-sky-900 font-extrabold text-[11px] rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-sky-200 shadow-2xs"
+                        className="px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-extrabold text-[11px] rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-amber-500/20 shadow-2xs"
                       >
-                        <ArrowLeft className="w-3.5 h-3.5 text-sky-700" />
-                        <span>Voltar para Memória do Paciente</span>
+                        <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Voltar para Memória</span>
                       </button>
 
-                      <span className="text-[10px] text-slate-400 font-extrabold uppercase">Refração &amp; Armação</span>
+                      <span className="text-[10px] text-slate-400 font-black uppercase">Grau &amp; Refração</span>
                     </div>
                     
                     {/* Visual Eye Metrics Form */}
-                    <div className="bg-white/80 p-3.5 rounded-2xl border border-sky-100/50 shadow-3xs">
+                    <div className="bg-[#0c1326]/60 p-3.5 rounded-2xl border border-amber-500/10 shadow-3xs">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 flex items-center gap-1.5">
-                          <Eye className="w-3.5 h-3.5 text-sky-600" />
+                        <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-amber-200 flex items-center gap-1.5">
+                          <Eye className="w-3.5 h-3.5 text-amber-400" />
                           Dados de Refração (Mapeamento)
                         </h4>
                         
                         <button
                           onClick={() => setIsEditingMetrics(!isEditingMetrics)}
-                          className="text-[9.5px] font-extrabold text-sky-600 hover:text-sky-700 px-2 py-0.5 rounded bg-sky-50 transition-all cursor-pointer border border-sky-100"
+                          className="text-[9.5px] font-black text-amber-300 hover:text-amber-200 px-2 py-0.5 rounded bg-amber-500/10 transition-all cursor-pointer border border-amber-500/25"
                         >
                           {isEditingMetrics ? 'Concluir' : 'Alterar Valores'}
                         </button>
@@ -2233,8 +2265,8 @@ export default function App() {
                       <div className="overflow-x-auto">
                         <table className="w-full text-center text-[11px] border-collapse">
                           <thead>
-                            <tr className="border-b border-sky-100/50 text-[9px] font-extrabold text-slate-400">
-                              <th className="py-1 text-left font-extrabold text-slate-500">Olho</th>
+                            <tr className="border-b border-amber-500/10 text-[9px] font-extrabold text-slate-400">
+                              <th className="py-1 text-left font-extrabold text-amber-250">Olho</th>
                               <th className="py-1">ESF (SPH)</th>
                               <th className="py-1">CIL (CYL)</th>
                               <th className="py-1">EIXO</th>
@@ -2242,17 +2274,17 @@ export default function App() {
                               <th className="py-1">DNP (PD)</th>
                             </tr>
                           </thead>
-                          <tbody className="font-mono text-slate-700 font-bold">
+                          <tbody className="font-mono text-slate-200 font-semibold">
                             {/* OD Row */}
-                            <tr className="border-b border-sky-50/40 text-[10.5px]">
-                              <td className="py-2 text-left font-sans font-extrabold text-sky-600">OD:</td>
+                            <tr className="border-b border-amber-500/5 text-[10.5px]">
+                              <td className="py-2 text-left font-sans font-extrabold text-amber-450">OD:</td>
                               <td className="py-2">
                                 {isEditingMetrics ? (
                                   <input 
                                     type="text" 
                                     value={selectedPatient.opticalData.od.sph} 
                                     onChange={(e) => handleUpdateMetric('od', 'sph', e.target.value)}
-                                    className="w-12 text-center bg-slate-100 rounded focus:outline-none font-mono text-xs font-bold"
+                                    className="w-12 text-center bg-[#070c18] border border-amber-500/20 text-slate-200 rounded focus:outline-none font-mono text-xs font-semibold"
                                   />
                                 ) : selectedPatient.opticalData.od.sph}
                               </td>
@@ -2262,7 +2294,7 @@ export default function App() {
                                     type="text" 
                                     value={selectedPatient.opticalData.od.cyl} 
                                     onChange={(e) => handleUpdateMetric('od', 'cyl', e.target.value)}
-                                    className="w-12 text-center bg-slate-100 rounded focus:outline-none font-mono text-xs font-bold"
+                                    className="w-12 text-center bg-[#070c18] border border-amber-500/20 text-slate-200 rounded focus:outline-none font-mono text-xs font-semibold"
                                   />
                                 ) : selectedPatient.opticalData.od.cyl}
                               </td>
@@ -2272,7 +2304,7 @@ export default function App() {
                                     type="text" 
                                     value={selectedPatient.opticalData.od.axis} 
                                     onChange={(e) => handleUpdateMetric('od', 'axis', e.target.value)}
-                                    className="w-10 text-center bg-slate-100 rounded focus:outline-none font-mono text-xs font-bold"
+                                    className="w-10 text-center bg-[#070c18] border border-amber-500/20 text-slate-200 rounded focus:outline-none font-mono text-xs font-semibold"
                                   />
                                 ) : `${selectedPatient.opticalData.od.axis}°`}
                               </td>
@@ -2282,7 +2314,7 @@ export default function App() {
                                     type="text" 
                                     value={selectedPatient.opticalData.od.add} 
                                     onChange={(e) => handleUpdateMetric('od', 'add', e.target.value)}
-                                    className="w-12 text-center bg-slate-100 rounded focus:outline-none font-mono text-xs font-bold"
+                                    className="w-12 text-center bg-[#070c18] border border-amber-500/20 text-slate-200 rounded focus:outline-none font-mono text-xs font-semibold"
                                   />
                                 ) : selectedPatient.opticalData.od.add}
                               </td>
@@ -2292,7 +2324,7 @@ export default function App() {
                                     type="text" 
                                     value={selectedPatient.opticalData.od.pd} 
                                     onChange={(e) => handleUpdateMetric('od', 'pd', e.target.value)}
-                                    className="w-16 text-center bg-slate-100 rounded focus:outline-none font-mono text-xs font-bold"
+                                    className="w-16 text-center bg-[#070c18] border border-amber-500/20 text-slate-200 rounded focus:outline-none font-mono text-xs font-semibold"
                                   />
                                 ) : selectedPatient.opticalData.od.pd}
                               </td>
@@ -2300,14 +2332,14 @@ export default function App() {
 
                             {/* OE Row */}
                             <tr className="text-[10.5px]">
-                              <td className="py-2 text-left font-sans font-extrabold text-indigo-600">OE:</td>
+                              <td className="py-2 text-left font-sans font-extrabold text-amber-450">OE:</td>
                               <td className="py-2">
                                 {isEditingMetrics ? (
                                   <input 
                                     type="text" 
                                     value={selectedPatient.opticalData.oe.sph} 
                                     onChange={(e) => handleUpdateMetric('oe', 'sph', e.target.value)}
-                                    className="w-12 text-center bg-slate-100 rounded focus:outline-none font-mono text-xs font-bold"
+                                    className="w-12 text-center bg-[#070c18] border border-amber-500/20 text-slate-200 rounded focus:outline-none font-mono text-xs font-semibold"
                                   />
                                 ) : selectedPatient.opticalData.oe.sph}
                               </td>
@@ -2317,7 +2349,7 @@ export default function App() {
                                     type="text" 
                                     value={selectedPatient.opticalData.oe.cyl} 
                                     onChange={(e) => handleUpdateMetric('oe', 'cyl', e.target.value)}
-                                    className="w-12 text-center bg-slate-100 rounded focus:outline-none font-mono text-xs font-bold"
+                                    className="w-12 text-center bg-[#070c18] border border-amber-500/20 text-slate-200 rounded focus:outline-none font-mono text-xs font-semibold"
                                   />
                                 ) : selectedPatient.opticalData.oe.cyl}
                               </td>
@@ -2327,7 +2359,7 @@ export default function App() {
                                     type="text" 
                                     value={selectedPatient.opticalData.oe.axis} 
                                     onChange={(e) => handleUpdateMetric('oe', 'axis', e.target.value)}
-                                    className="w-10 text-center bg-slate-100 rounded focus:outline-none font-mono text-xs font-bold"
+                                    className="w-10 text-center bg-[#070c18] border border-amber-500/20 text-slate-200 rounded focus:outline-none font-mono text-xs font-semibold"
                                   />
                                 ) : `${selectedPatient.opticalData.oe.axis}°`}
                               </td>
@@ -2337,7 +2369,7 @@ export default function App() {
                                     type="text" 
                                     value={selectedPatient.opticalData.oe.add} 
                                     onChange={(e) => handleUpdateMetric('oe', 'add', e.target.value)}
-                                    className="w-12 text-center bg-slate-100 rounded focus:outline-none font-mono text-xs font-bold"
+                                    className="w-12 text-center bg-[#070c18] border border-amber-500/20 text-slate-200 rounded focus:outline-none font-mono text-xs font-semibold"
                                   />
                                 ) : selectedPatient.opticalData.oe.add}
                               </td>
@@ -2347,7 +2379,7 @@ export default function App() {
                                     type="text" 
                                     value={selectedPatient.opticalData.oe.pd} 
                                     onChange={(e) => handleUpdateMetric('oe', 'pd', e.target.value)}
-                                    className="w-16 text-center bg-slate-100 rounded focus:outline-none font-mono text-xs font-bold"
+                                    className="w-16 text-center bg-[#070c18] border border-amber-500/20 text-slate-200 rounded focus:outline-none font-mono text-xs font-semibold"
                                   />
                                 ) : selectedPatient.opticalData.oe.pd}
                               </td>
@@ -2357,61 +2389,16 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Lens Customization & Framing Treatments */}
-                    <div className="bg-white/80 p-3.5 rounded-2xl border border-sky-100/50 shadow-3xs space-y-3">
-                      <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 flex items-center gap-1.5 pb-1 border-b border-sky-50">
-                        <SlidersHorizontal className="w-3.5 h-3.5 text-sky-600" />
-                        Tratamentos e Materiais
-                      </h4>
-
-                      <div className="space-y-2.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-slate-700 font-bold">Filtro Antirreflexo (AR):</span>
-                          <input 
-                            type="checkbox" 
-                            checked={selectedPatient.lensFeatures.antiReflexo} 
-                            onChange={() => handleToggleLensFeature('antiReflexo')}
-                            className="w-4 h-4 text-sky-600 rounded cursor-pointer"
-                          />
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-slate-700 font-bold">Filtro Blue-Control (Telas):</span>
-                          <input 
-                            type="checkbox" 
-                            checked={selectedPatient.lensFeatures.blueControl} 
-                            onChange={() => handleToggleLensFeature('blueControl')}
-                            className="w-4 h-4 text-sky-600 rounded cursor-pointer"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="text-[9px] text-slate-400 font-bold block uppercase mb-1">Armação Selecionada:</label>
-                          <select 
-                            value={selectedPatient.lensFeatures.materialArmacao} 
-                            onChange={(e) => handleUpdateFrameMaterial(e.target.value)}
-                            className="text-xs bg-slate-50 border border-sky-100 rounded p-1.5 font-bold text-slate-800 w-full focus:outline-none"
-                          >
-                            <option value="Acetato Translúcido Premium">Acetato Translúcido Premium</option>
-                            <option value="Acetato Preto Flocado">Acetato Preto Flocado</option>
-                            <option value="Metal Titanium Premium">Metal Titanium Premium</option>
-                            <option value="Metal Dourado Slim">Metal Dourado Slim</option>
-                            <option value="Policarbonato Sport">Policarbonato Sport</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-
                   </div>
                 )}
 
                 {/* MODULE: CLINICAL AI ASSISTANT CO-PILOT ANALYSIS */}
-                <div className="bg-gradient-to-br from-slate-900 to-sky-950 p-4 rounded-2xl border border-sky-500/20 shadow-lg text-white space-y-3.5 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
+                <div className="bg-gradient-to-br from-[#0c1326]/90 to-[#070c18]/90 p-4 rounded-2xl border border-amber-500/15 shadow-lg text-white space-y-3.5 relative overflow-hidden mt-3">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
                   
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-sky-400 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                    <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-amber-300 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                       Análise de Tratamento Iris AI
                     </h4>
                     <span className="text-[8.5px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.2 rounded font-bold uppercase tracking-wider">
@@ -2419,7 +2406,7 @@ export default function App() {
                     </span>
                   </div>
 
-                  <p className="text-[10px] text-slate-300 leading-relaxed font-semibold">
+                  <p className="text-[10px] text-slate-400 leading-relaxed font-semibold">
                     Análise em tempo real do grau óptico de <span className="text-white font-bold">{selectedPatient.name}</span>. Nosso cérebro de triagem clínica cruzará as condições anteriores de saúde ocular.
                   </p>
 
@@ -2429,18 +2416,18 @@ export default function App() {
                       placeholder="Instrução adicional (Ex: Foco no cansaço de telas)..." 
                       value={customPrompt}
                       onChange={(e) => setCustomPrompt(e.target.value)}
-                      className="w-full bg-slate-800/80 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                      className="w-full bg-[#070c18] border border-amber-500/15 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
                     />
                   </div>
 
                   <button
                     onClick={() => triggerAiAnalysis(true)}
                     disabled={isAnalyzing}
-                    className="w-full py-2 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 disabled:opacity-45 text-white text-xs font-extrabold rounded-xl transition-all shadow-md shadow-sky-500/20 cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full py-2 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 disabled:opacity-45 text-slate-950 text-xs font-black rounded-xl transition-all shadow-md shadow-amber-500/10 cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     {isAnalyzing ? (
                       <>
-                        <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <div className="w-3 h-3 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
                         <span>Iris processando receita...</span>
                       </>
                     ) : (
@@ -2456,7 +2443,7 @@ export default function App() {
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="bg-white text-slate-800 p-3.5 rounded-xl border border-sky-100 max-h-[220px] overflow-y-auto mt-2 text-xs select-text shadow-inner"
+                      className="bg-[#070c18] text-slate-200 p-3.5 rounded-xl border border-amber-500/15 max-h-[220px] overflow-y-auto mt-2 text-xs select-text shadow-inner"
                     >
                       {renderAnalysisMarkdown(aiAnalysis)}
                     </motion.div>
