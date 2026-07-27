@@ -23,7 +23,10 @@ import {
   Banknote,
   Building2,
   Receipt,
-  ArrowLeft
+  ArrowLeft,
+  Lock,
+  Unlock,
+  Power
 } from 'lucide-react';
 import { Patient, Transaction } from '../types';
 import FluxoCaixaPdfModal from './FluxoCaixaPdfModal';
@@ -75,6 +78,20 @@ export default function FluxoCaixa({ isOpen, onClose, patients, onUpdateRevenue 
     return DEFAULT_TRANSACTIONS;
   });
 
+  // Cash Register Open/Close state
+  const [isCaixaAberto, setIsCaixaAberto] = useState<boolean>(() => {
+    const saved = localStorage.getItem('irisclin_caixa_aberto');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  const [caixaAbertoHora, setCaixaAbertoHora] = useState<string>(() => {
+    return localStorage.getItem('irisclin_caixa_aberto_hora') || 'Hoje, 08:00';
+  });
+
+  const [caixaFechadoHora, setCaixaFechadoHora] = useState<string>(() => {
+    return localStorage.getItem('irisclin_caixa_fechado_hora') || '';
+  });
+
   // Easy Quick Form states
   const [numDocumento, setNumDocumento] = useState('');
   const [description, setDescription] = useState('');
@@ -96,6 +113,9 @@ export default function FluxoCaixa({ isOpen, onClose, patients, onUpdateRevenue 
   // Persistence
   useEffect(() => {
     localStorage.setItem('irisclin_transactions', JSON.stringify(transactions));
+    localStorage.setItem('irisclin_caixa_aberto', JSON.stringify(isCaixaAberto));
+    localStorage.setItem('irisclin_caixa_aberto_hora', caixaAbertoHora);
+    localStorage.setItem('irisclin_caixa_fechado_hora', caixaFechadoHora);
     
     // Sync total paid 'entradas' to main dashboard
     if (onUpdateRevenue) {
@@ -104,7 +124,7 @@ export default function FluxoCaixa({ isOpen, onClose, patients, onUpdateRevenue 
         .reduce((sum, t) => sum + t.amount, 0);
       onUpdateRevenue(todayPaidEntradas);
     }
-  }, [transactions, onUpdateRevenue]);
+  }, [transactions, isCaixaAberto, caixaAbertoHora, caixaFechadoHora, onUpdateRevenue]);
 
   if (!isOpen) return null;
 
@@ -173,6 +193,14 @@ export default function FluxoCaixa({ isOpen, onClose, patients, onUpdateRevenue 
 
   const handleAddTransaction = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isCaixaAberto) {
+      if (confirm('O Caixa está FECHADO para lançamentos. Deseja ABRIR O CAIXA ZERADO agora?')) {
+        handleAbrirCaixaZerado();
+      }
+      return;
+    }
+
     if (!description.trim() || !amount) return;
 
     const parsedAmount = parseFloat(amount);
@@ -209,6 +237,45 @@ export default function FluxoCaixa({ isOpen, onClose, patients, onUpdateRevenue 
     setStatus('pago');
   };
 
+  const handleAbrirCaixaZerado = () => {
+    const hasTransactions = transactions.length > 0;
+    const confirmMsg = hasTransactions 
+      ? 'Deseja ABRIR UM NOVO CAIXA ZERADO para o dia de hoje?\n\nOs lançamentos do caixa anterior serão encerrados/zerados para dar início às operações do novo dia.'
+      : 'Deseja ABRIR O CAIXA ZERADO com R$ 0,00 aguardando os lançamentos do dia?';
+
+    if (confirm(confirmMsg)) {
+      const nowTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      setTransactions([]);
+      setIsCaixaAberto(true);
+      setCaixaAbertoHora(`Hoje às ${nowTime}`);
+      setCaixaFechadoHora('');
+      setTxDate(todayStr);
+
+      alert(`✅ CAIXA ABERTO COM SUCESSO!\n\n• Status: Aberto com valores ZERADOS (R$ 0,00)\n• Horário de Abertura: ${nowTime}\n• Aprovado para novos lançamentos diários.`);
+    }
+  };
+
+  const handleFecharCaixaDia = () => {
+    if (!isCaixaAberto) {
+      alert('O caixa já se encontra FECHADO.');
+      return;
+    }
+
+    const nowTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const totalLiquidoStr = saldoLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    const dineroGavetaStr = saldoDinheiroGaveta.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+    const confirmMsg = `🔒 CONFIRMAÇÃO DE FECHAMENTO DE CAIXA DO DIA\n\nResumo Final das Operações:\n• Total de Movimentações: ${transactions.length}\n• Saldo Líquido do Dia: R$ ${totalLiquidoStr}\n• Dinheiro em Gaveta: R$ ${dineroGavetaStr}\n• Total Recebido em Cartão: R$ ${totalCartao.toFixed(2)}\n• Total Recebido em Pix: R$ ${totalPix.toFixed(2)}\n\nDeseja encerrar e fechar o caixa agora?`;
+
+    if (confirm(confirmMsg)) {
+      setIsCaixaAberto(false);
+      setCaixaFechadoHora(`Hoje às ${nowTime}`);
+      alert(`🔒 CAIXA FECHADO COM SUCESSO!\n\n• Horário de Encerramento: ${nowTime}\n• Saldo Líquido Final: R$ ${totalLiquidoStr}\n\nO caixa foi encerrado para novas entradas. Clique em "Abrir Caixa (Zerado)" quando for iniciar o próximo dia de trabalho.`);
+    }
+  };
+
   const handleDeleteTransaction = (id: string) => {
     if (confirm('Deseja realmente excluir este lançamento do caixa?')) {
       setTransactions(prev => prev.filter(t => t.id !== id));
@@ -233,12 +300,20 @@ export default function FluxoCaixa({ isOpen, onClose, patients, onUpdateRevenue 
                 <DollarSign className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-base sm:text-lg font-extrabold tracking-tight flex items-center gap-2">
-                  <span>Caixa &amp; Financeiro</span>
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold font-mono">
-                    SISTEMA
-                  </span>
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-extrabold tracking-tight">
+                    Caixa &amp; Financeiro
+                  </h2>
+                  {isCaixaAberto ? (
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-extrabold font-mono flex items-center gap-1 shadow-xs">
+                      <Unlock className="w-3 h-3 text-emerald-400" /> ABERTO ({caixaAbertoHora})
+                    </span>
+                  ) : (
+                    <span className="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded-full font-extrabold font-mono flex items-center gap-1 shadow-xs">
+                      <Lock className="w-3 h-3 text-rose-400" /> FECHADO ({caixaFechadoHora || 'Encerrado'})
+                    </span>
+                  )}
+                </div>
                 <p className="text-[11px] sm:text-xs text-slate-300">Lançamento de entradas e saídas com fechamento por Pix, Cartão e Dinheiro</p>
               </div>
             </div>
@@ -254,9 +329,34 @@ export default function FluxoCaixa({ isOpen, onClose, patients, onUpdateRevenue 
           </div>
 
           <div className="flex items-center justify-end gap-2 w-full sm:w-auto overflow-x-auto no-scrollbar py-0.5">
+            
+            {/* BOTÃO ABRIR CAIXA ZERADO */}
+            <button
+              onClick={handleAbrirCaixaZerado}
+              className="px-3.5 py-2 text-xs font-black text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400 hover:from-emerald-300 hover:to-teal-300 border border-emerald-300/60 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-md hover:scale-105 shrink-0 min-h-[40px]"
+              title="Abrir um novo caixa zerado (R$ 0,00) para iniciar as movimentações do dia"
+            >
+              <Unlock className="w-4 h-4 text-slate-950" />
+              <span>Abrir Caixa (Zerado)</span>
+            </button>
+
+            {/* BOTÃO FECHAR CAIXA DO DIA */}
+            <button
+              onClick={handleFecharCaixaDia}
+              className={`px-3.5 py-2 text-xs font-black rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-md shrink-0 min-h-[40px] ${
+                isCaixaAberto
+                  ? 'bg-gradient-to-r from-rose-600 via-rose-700 to-amber-700 hover:from-rose-500 hover:to-amber-600 text-white border border-rose-400/40 hover:scale-105'
+                  : 'bg-slate-800 text-slate-400 border border-slate-700 opacity-60 cursor-not-allowed'
+              }`}
+              title="Encerrar o caixa e consolidar o fechamento do dia"
+            >
+              <Lock className="w-4 h-4" />
+              <span>Fechar Caixa</span>
+            </button>
+
             <button 
               onClick={handleResetToDefaults}
-              className="px-3 py-2 text-xs font-bold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shrink-0 min-h-[40px]"
+              className="px-2.5 py-2 text-xs font-bold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-xl flex items-center gap-1 transition-all cursor-pointer shrink-0 min-h-[40px]"
               title="Carregar modelo de dados do dia 21/07/2026"
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -371,10 +471,37 @@ export default function FluxoCaixa({ isOpen, onClose, patients, onUpdateRevenue 
 
             {/* EASY QUICK ENTRY FORM */}
             <div className="space-y-3">
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                <Plus className="w-4 h-4 text-emerald-600" />
-                <span>Novo Lançamento Rápido</span>
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Plus className="w-4 h-4 text-emerald-600" />
+                  <span>Novo Lançamento Rápido</span>
+                </span>
+                {!isCaixaAberto && (
+                  <span className="text-[10px] text-rose-600 font-extrabold bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                    <Lock className="w-3 h-3" /> Caixa Fechado
+                  </span>
+                )}
               </h3>
+
+              {!isCaixaAberto && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 text-amber-900 rounded-xl text-xs font-medium space-y-2 animate-fade-in">
+                  <div className="flex items-center gap-1.5 font-black text-amber-950">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Caixa Encerrado para o Dia</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-slate-700">
+                    O caixa se encontra fechado. Para cadastrar novos lançamentos de vendas ou despesas, clique no botão para abrir com saldo zerado.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleAbrirCaixaZerado}
+                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs"
+                  >
+                    <Unlock className="w-3.5 h-3.5" />
+                    <span>Abrir Caixa Agora (Zerado)</span>
+                  </button>
+                </div>
+              )}
 
               <form onSubmit={handleAddTransaction} className="space-y-2.5">
                 

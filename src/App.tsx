@@ -22,7 +22,7 @@ import {
   Grid, 
   Database, 
   LogOut, 
-  User, 
+  User as UserIcon, 
   Trash2, 
   PlusCircle, 
   UserCheck, 
@@ -60,7 +60,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Patient, ChatMessage, TimelineEvent, OpticalMetrics, PatientOpticalData, PatientDocument } from './types';
+import { Patient, ChatMessage, TimelineEvent, OpticalMetrics, PatientOpticalData, PatientDocument, User, UserRole, AuditLog } from './types';
 import { INITIAL_PATIENTS } from './data/patients';
 import FluxoCaixa from './components/FluxoCaixa';
 import PatientDossierModal from './components/PatientDossierModal';
@@ -78,8 +78,9 @@ import IrisVoiceSettingsModal from './components/IrisVoiceSettingsModal';
 import OfflineSyncModal from './components/OfflineSyncModal';
 import TeamPerformanceModal from './components/TeamPerformanceModal';
 import AiExamAnalysisModal from './components/AiExamAnalysisModal';
+import AuthModal, { PRESET_USERS } from './components/AuthModal';
+import PatientPortalModal from './components/PatientPortalModal';
 import { speakHumanVoice } from './utils/humanVoice';
-import { supabase } from './utils/supabaseClient';
 
 // Custom interface for Dashboard metrics
 interface ClinicDashboard {
@@ -95,60 +96,6 @@ interface ClinicDashboard {
 }
 
 export default function App() {
-  // Authentication & Profile States
-  const [currentUserRole, setCurrentUserRole] = useState<'ceo' | 'lider' | 'profissional' | 'cliente' | null>(() => {
-    return (localStorage.getItem('irisclin_user_role') as any) || null;
-  });
-  const [currentUser, setCurrentUser] = useState<any>(() => {
-    const saved = localStorage.getItem('irisclin_current_user');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-  const [globalLoading, setGlobalLoading] = useState(false);
-
-  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
-    setToastMessage({ text, type });
-  };
-
-  useEffect(() => {
-    if (toastMessage) {
-      const timer = setTimeout(() => setToastMessage(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [toastMessage]);
-
-  const handleLogout = () => {
-    setCurrentUserRole(null);
-    setCurrentUser(null);
-    localStorage.removeItem('irisclin_user_role');
-    localStorage.removeItem('irisclin_current_user');
-    showToast('Sessão encerrada com segurança!', 'success');
-  };
-
-  const handleOpenFinance = () => {
-    if (currentUserRole === 'ceo' || currentUserRole === 'lider') {
-      setIsFinanceOpen(true);
-    } else {
-      showToast('Acesso negado: Perfil sem permissão para dados financeiros.', 'error');
-    }
-  };
-
-  const handleOpenOutreach = () => {
-    if (currentUserRole === 'ceo' || currentUserRole === 'lider') {
-      setIsOutreachModalOpen(true);
-    } else {
-      showToast('Acesso negado: Perfil sem permissão para disparos de outreach.', 'error');
-    }
-  };
-
-  const handleOpenTeamPerformance = () => {
-    if (currentUserRole === 'ceo' || currentUserRole === 'lider') {
-      setIsTeamPerformanceOpen(true);
-    } else {
-      showToast('Acesso negado: Perfil sem permissão para dados de equipe.', 'error');
-    }
-  };
-
   // Clinical state
   const [patients, setPatients] = useState<Patient[]>(() => {
     const saved = localStorage.getItem('irisclin_patients');
@@ -280,6 +227,120 @@ export default function App() {
   const [isTeamPerformanceOpen, setIsTeamPerformanceOpen] = useState(false);
   const [isAiExamOpen, setIsAiExamOpen] = useState(false);
 
+  // RBAC AUTHENTICATION & USER MANAGEMENT STATE
+  const [currentUser, setCurrentUser] = useState<User | null>(PRESET_USERS[0]); // Default: Dioenne Rocha (ADMIN)
+  const [allUsers, setAllUsers] = useState<User[]>(PRESET_USERS);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isPatientPortalOpen, setIsPatientPortalOpen] = useState(false);
+
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([
+    { id: 'aud_1', usuario_nome: 'Dioenne Rocha', usuario_email: 'dioenne@irisclin.com.br', perfil: 'ADMIN', acao: 'Login no Sistema - Perfil ADMIN Identificado', horario: 'Hoje, 08:15', ip: '189.23.102.44', dispositivo: 'Chrome OS / Windows Desktop' },
+    { id: 'aud_2', usuario_nome: 'Marly Lima Rocha', usuario_email: 'marly@irisclin.com.br', perfil: 'ADMIN', acao: 'Acesso ao Painel Financeiro', horario: 'Ontem, 17:40', ip: '189.23.102.48', dispositivo: 'MacBook Air / Safari' },
+    { id: 'aud_3', usuario_nome: 'Dr. Augusto Faro', usuario_email: 'augusto@irisclin.com.br', perfil: 'MEDICO', acao: 'Acesso ao Painel Médico - Fila de Atendimento', horario: 'Hoje, 08:20', ip: '189.23.102.45', dispositivo: 'iPad Pro / Safari' },
+    { id: 'aud_4', usuario_nome: 'Ainoã', usuario_email: 'ainoa@irisclin.com.br', perfil: 'RECEPCIONISTA', acao: 'Abertura de Caixa e Confirmação de Presença', horario: 'Hoje, 08:00', ip: '189.23.102.12', dispositivo: 'Recepção PC 01' }
+  ]);
+
+  const [globalLoading, setGlobalLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const handleOpenFinance = () => {
+    if (!currentUser) {
+      showToast('Autenticação necessária para acessar a Área Financeira.', 'error');
+      setIsAuthModalOpen(true);
+      return;
+    }
+    if (currentUser.perfil !== 'ADMIN' && currentUser.perfil !== 'RECEPCIONISTA') {
+      showToast(`Acesso Negado: Perfil ${currentUser.perfil} não possui permissão para visualizar o Caixa.`, 'error');
+      return;
+    }
+    setIsFinanceOpen(true);
+  };
+
+  const handleOpenTeamPerformance = () => {
+    if (!currentUser) {
+      showToast('Autenticação necessária para acessar a Performance da Equipe.', 'error');
+      setIsAuthModalOpen(true);
+      return;
+    }
+    if (currentUser.perfil !== 'ADMIN') {
+      showToast(`Acesso Negado: Perfil ${currentUser.perfil} não possui permissão para visualizar o Desempenho da Equipe.`, 'error');
+      return;
+    }
+    setIsTeamPerformanceOpen(true);
+  };
+
+  const handleOpenOutreach = () => {
+    if (!currentUser) {
+      showToast('Autenticação necessária para disparar convites.', 'error');
+      setIsAuthModalOpen(true);
+      return;
+    }
+    if (currentUser.perfil !== 'ADMIN' && currentUser.perfil !== 'RECEPCIONISTA') {
+      showToast(`Acesso Negado: Perfil ${currentUser.perfil} não possui permissão para disparar mensagens em lote.`, 'error');
+      return;
+    }
+    setIsOutreachModalOpen(true);
+  };
+
+  const handleLoginSuccess = (user: User) => {
+    setCurrentUser(user);
+    const newLog: AuditLog = {
+      id: `aud_${Date.now()}`,
+      usuario_nome: user.nome,
+      usuario_email: user.email,
+      perfil: user.perfil,
+      acao: `Autenticação Efetuada (IA Identificou: ${user.nome} → ${user.perfil})`,
+      horario: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      ip: '189.23.102.' + Math.floor(Math.random() * 200 + 10),
+      dispositivo: 'Desktop Browser'
+    };
+    setAuditLogs(prev => [newLog, ...prev]);
+
+    if (user.perfil === 'PACIENTE') {
+      setIsPatientPortalOpen(true);
+    }
+  };
+
+  const handleLogout = () => {
+    if (currentUser) {
+      const newLog: AuditLog = {
+        id: `aud_${Date.now()}`,
+        usuario_nome: currentUser.nome,
+        usuario_email: currentUser.email,
+        perfil: currentUser.perfil,
+        acao: 'Logout efetuado do sistema',
+        horario: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        ip: '189.23.102.44',
+        dispositivo: 'Desktop Browser'
+      };
+      setAuditLogs(prev => [newLog, ...prev]);
+    }
+    setCurrentUser(null);
+    setIsAuthModalOpen(true);
+  };
+
+  const handleAddNewUserByAdmin = (newUser: User) => {
+    setAllUsers(prev => [newUser, ...prev]);
+    if (currentUser) {
+      const newLog: AuditLog = {
+        id: `aud_${Date.now()}`,
+        usuario_nome: currentUser.nome,
+        usuario_email: currentUser.email,
+        perfil: currentUser.perfil,
+        acao: `Criou novo usuário: ${newUser.nome} (${newUser.perfil})`,
+        horario: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        ip: '189.23.102.44',
+        dispositivo: 'Desktop Browser'
+      };
+      setAuditLogs(prev => [newLog, ...prev]);
+    }
+  };
+
   const handleAddExamToPatient = (patientId: string, document: PatientDocument) => {
     setPatients(prev => prev.map(p => {
       if (p.id === patientId) {
@@ -358,7 +419,6 @@ export default function App() {
     if (aiAnalysis && !force) return;
 
     setIsAnalyzing(true);
-    setGlobalLoading(true);
     try {
       const response = await fetch('/api/copilot/analyze', {
         method: 'POST',
@@ -375,17 +435,12 @@ export default function App() {
       const data = await response.json();
       if (data.success) {
         setAiAnalysis(data.analysis);
-        showToast('Análise oftálmica gerada com sucesso pela Iris AI!', 'success');
-      } else {
-        throw new Error(data.error || 'Falha na resposta do servidor.');
       }
-    } catch (e: any) {
+    } catch (e) {
       console.error('Error analyzing clinical data:', e);
-      setAiAnalysis(`### Copilot ÍrisClin • Erro\n\nErro ao conectar com o serviço do AI Copilot: ${e.message || 'Erro desconhecido'}`);
-      showToast('Falha ao gerar análise de receita oftálmica.', 'error');
+      setAiAnalysis(`### Copilot ÍrisClin ✨\n\nErro ao conectar com o serviço do AI Copilot. Por favor, tente novamente mais tarde.`);
     } finally {
       setIsAnalyzing(false);
-      setGlobalLoading(false);
     }
   };
 
@@ -482,7 +537,6 @@ export default function App() {
 
     setPatients(updatedPatients);
     setIsChatting(true);
-    setGlobalLoading(true);
 
     // Call interactive clinical chat assistant endpoint
     try {
@@ -531,14 +585,11 @@ export default function App() {
 
       // Speak response automatically if enabled
       speakText(replyMsg.content);
-      showToast('Resposta recebida da Iris AI!', 'success');
 
     } catch (err) {
       console.error('Error generating chat reply:', err);
-      showToast('Falha ao obter resposta do assistente de IA.', 'error');
     } finally {
       setIsChatting(false);
-      setGlobalLoading(false);
     }
   };
 
@@ -547,7 +598,6 @@ export default function App() {
     setShowUploadMenu(false);
     setUploadProgress(10);
     setUploadedFileName(fileName);
-    setGlobalLoading(true);
 
     // Simulated progress loader
     const interval = setInterval(() => {
@@ -589,8 +639,7 @@ export default function App() {
               }
               return p;
             }));
-            alertMsg = `Receita médica analisada! Graus extraídos com sucesso. OD: Esf ${data.analysis.extracted.od.sph} | OE: Esf ${data.analysis.extracted.oe.sph}`;
-            showToast('Receita médica digitalizada via OCR com sucesso!', 'success');
+            alertMsg = `Receita médica analisada! Graus extraídos com sucesso por Visão Computacional. OD: Esf ${data.analysis.extracted.od.sph} | OE: Esf ${data.analysis.extracted.oe.sph}`;
           } else if (fileName === 'armação_escolhida.png') {
             setPatients(prev => prev.map(p => {
               if (p.id === selectedPatient.id) {
@@ -608,8 +657,7 @@ export default function App() {
               }
               return p;
             }));
-            alertMsg = `Foto da armação interpretada: ${data.analysis.extracted.frameMaterial}.`;
-            showToast('Armação registrada com sucesso!', 'success');
+            alertMsg = `Foto da armação interpretada pela Iris AI: ${data.analysis.extracted.frameMaterial} cor ${data.analysis.extracted.frameColor}.`;
           } else {
             // PIX Confirm
             setPatients(prev => prev.map(p => {
@@ -625,8 +673,7 @@ export default function App() {
               }
               return p;
             }));
-            alertMsg = `Comprovante PIX validado com sucesso!`;
-            showToast('Pagamento via PIX confirmado!', 'success');
+            alertMsg = `Comprovante de pagamento validado: R$ 780,00 recebidos via PIX Itaú. Status alterado para Em Laboratório!`;
           }
 
           // Add a system log message in chat history
@@ -651,22 +698,17 @@ export default function App() {
           // Speak output
           speakText(alertMsg);
 
-        } else {
-          showToast('Erro ao processar imagem via OCR.', 'error');
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error in mock upload:', err);
-        showToast('Falha na conexão com o servidor de OCR.', 'error');
       } finally {
         setUploadedFileName(null);
-        setGlobalLoading(false);
       }
     }, 1000);
   };
 
   // NEW FEATURE: Simulated Meta WhatsApp API Triggers
   const handleWhatsAppTrigger = async (action: 'send_pix' | 'send_location' | 'send_budget_pdf' | 'send_ready_alert' | 'send_nps_survey') => {
-    setGlobalLoading(true);
     try {
       const response = await fetch('/api/whatsapp/simulate', {
         method: 'POST',
@@ -728,15 +770,9 @@ export default function App() {
         }));
 
         speakText(data.botReply);
-        showToast('Notificação WhatsApp enviada via API Meta!', 'success');
-      } else {
-        showToast('Erro ao disparar WhatsApp.', 'error');
       }
     } catch (e) {
       console.error('WhatsApp trigger error:', e);
-      showToast('Falha ao conectar com API do WhatsApp.', 'error');
-    } finally {
-      setGlobalLoading(false);
     }
   };
 
@@ -921,152 +957,13 @@ export default function App() {
     });
   };
 
-  // Filter patients with security policies based on user profile role
+  // Filter patients
   const filteredPatients = patients.filter(p => {
-    // RLS Filter A: Paciente (Cliente) só pode visualizar seus próprios registros
-    if (currentUserRole === 'cliente' && p.id !== currentUser?.id) {
-      return false;
-    }
-    
-    // RLS Filter B: Profissional (Médico) só visualiza seus próprios pacientes sob cuidados
-    if (currentUserRole === 'profissional' && p.doctorInCharge !== currentUser?.name) {
-      return false;
-    }
-
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           p.lastMessage.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'Todos' || p.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
-
-  // 1. SELECT PROFILE / LOGIN SCREEN
-  if (!currentUserRole) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans relative overflow-hidden">
-        {/* Animated Background Gradients */}
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-cyan-900/20 blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-950/30 blur-[150px] animate-pulse" />
-
-        <div className="max-w-2xl w-full bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-8 relative z-10">
-          <div className="text-center space-y-3">
-            <div className="inline-flex h-14 w-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/25 items-center justify-center text-cyan-400">
-              <Sparkles className="w-7 h-7" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black tracking-tight text-white flex items-center justify-center gap-2">
-                <span>ÍrisClin</span>
-                <span className="text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 px-2 py-0.5 rounded-full font-mono uppercase tracking-wider">Enterprise v2.0</span>
-              </h2>
-              <p className="text-xs text-slate-400 max-w-md mx-auto mt-1">
-                Selecione o perfil para acessar o painel administrativo ou área do paciente com segurança criptografada LGPD.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* CEO CARD */}
-            <button
-              onClick={() => {
-                setCurrentUserRole('ceo');
-                setCurrentUser({ name: 'Diretor Clínico', email: 'ceo@irisclin.com.br' });
-                localStorage.setItem('irisclin_user_role', 'ceo');
-                localStorage.setItem('irisclin_current_user', JSON.stringify({ name: 'Diretor Clínico', email: 'ceo@irisclin.com.br' }));
-                showToast('Acesso como CEO concedido com sucesso!', 'success');
-              }}
-              className="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-cyan-500/50 hover:bg-slate-850 text-left transition-all group flex flex-col justify-between min-h-[140px] cursor-pointer hover:scale-[1.02] relative"
-            >
-              <div className="flex items-start justify-between">
-                <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all">
-                  <Award className="w-5 h-5" />
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition-all group-hover:translate-x-1" />
-              </div>
-              <div>
-                <h4 className="text-xs font-black text-white uppercase tracking-wider mt-4">Diretoria / CEO</h4>
-                <p className="text-[10px] text-slate-400 mt-1">Auditoria geral, métricas de faturamento e inteligência artificial completa.</p>
-              </div>
-            </button>
-
-            {/* LIDER CARD */}
-            <button
-              onClick={() => {
-                setCurrentUserRole('lider');
-                setCurrentUser({ name: 'Líder da Recepção', email: 'lider@irisclin.com.br' });
-                localStorage.setItem('irisclin_user_role', 'lider');
-                localStorage.setItem('irisclin_current_user', JSON.stringify({ name: 'Líder da Recepção', email: 'lider@irisclin.com.br' }));
-                showToast('Acesso como Líder Clínico concedido!', 'success');
-              }}
-              className="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-850 text-left transition-all group flex flex-col justify-between min-h-[140px] cursor-pointer hover:scale-[1.02] relative"
-            >
-              <div className="flex items-start justify-between">
-                <div className="p-3 rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-all">
-                  <Users className="w-5 h-5" />
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-indigo-400 transition-all group-hover:translate-x-1" />
-              </div>
-              <div>
-                <h4 className="text-xs font-black text-white uppercase tracking-wider mt-4">Líder Clínico (LDM)</h4>
-                <p className="text-[10px] text-slate-400 mt-1">Acompanhamento do time de atendimento, agendamentos e recepção.</p>
-              </div>
-            </button>
-
-            {/* PROFISSIONAL CARD */}
-            <button
-              onClick={() => {
-                setCurrentUserRole('profissional');
-                setCurrentUser({ name: 'Dr. Augusto Faro', email: 'faro.crm@irisclin.com.br', crm: 'BA 81047' });
-                localStorage.setItem('irisclin_user_role', 'profissional');
-                localStorage.setItem('irisclin_current_user', JSON.stringify({ name: 'Dr. Augusto Faro', email: 'faro.crm@irisclin.com.br', crm: 'BA 81047' }));
-                showToast('Acesso como Profissional Clínico concedido!', 'success');
-              }}
-              className="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-850 text-left transition-all group flex flex-col justify-between min-h-[140px] cursor-pointer hover:scale-[1.02] relative"
-            >
-              <div className="flex items-start justify-between">
-                <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 transition-all">
-                  <Glasses className="w-5 h-5" />
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-all group-hover:translate-x-1" />
-              </div>
-              <div>
-                <h4 className="text-xs font-black text-white uppercase tracking-wider mt-4">Médico / Profissional</h4>
-                <p className="text-[10px] text-slate-400 mt-1">Dados de refração dos pacientes (OD/OE), laudos e anamneses.</p>
-              </div>
-            </button>
-
-            {/* CLIENTE CARD */}
-            <button
-              onClick={() => {
-                setCurrentUserRole('cliente');
-                const defaultPatient = patients[0] || { id: '1', name: 'João da Silva' };
-                setCurrentUser({ name: defaultPatient.name, id: defaultPatient.id, phone: defaultPatient.phone });
-                localStorage.setItem('irisclin_user_role', 'cliente');
-                localStorage.setItem('irisclin_current_user', JSON.stringify({ name: defaultPatient.name, id: defaultPatient.id, phone: defaultPatient.phone }));
-                setSelectedId(defaultPatient.id);
-                showToast(`Bem-vindo, ${defaultPatient.name.split(' ')[0]}!`, 'success');
-              }}
-              className="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-850 text-left transition-all group flex flex-col justify-between min-h-[140px] cursor-pointer hover:scale-[1.02] relative"
-            >
-              <div className="flex items-start justify-between">
-                <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all">
-                  <User className="w-5 h-5" />
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-all group-hover:translate-x-1" />
-              </div>
-              <div>
-                <h4 className="text-xs font-black text-white uppercase tracking-wider mt-4">Paciente (Cliente)</h4>
-                <p className="text-[10px] text-slate-400 mt-1">Consulte suas receitas de óculos, exames, dossiê e converse com a Iris AI.</p>
-              </div>
-            </button>
-          </div>
-
-          <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-500">
-            <span className="flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> Criptografia Ponta a Ponta</span>
-            <span>ÍrisClin Oficial • PWA Resiliente</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center font-sans overflow-hidden antialiased p-0 sm:p-2 md:p-3 lg:p-4 selection:bg-sky-200">
@@ -1133,9 +1030,29 @@ export default function App() {
               patients={patients}
               onUpdatePatient={handleUpdateSinglePatient}
               onOpenAgenda={() => setIsAgendaOpen(true)}
-              onOpenFinance={handleOpenFinance}
+              onOpenFinance={() => setIsFinanceOpen(true)}
               onTriggerOutreach={handleSendBulkMessage}
             />
+
+            {/* Button to access RBAC Auth & User Management */}
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className="px-3 py-1 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 hover:from-slate-800 hover:to-indigo-900 text-sky-300 text-[11px] font-extrabold rounded-lg shadow-md transition-all flex items-center gap-1.5 cursor-pointer border border-sky-400/30"
+              title="Acessar Tela de Login, Troca de Perfil (ADMIN, MEDICO, RECEPCIONISTA, PACIENTE), Tabela de Usuários e Auditoria LGPD"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
+              <span>🔐 Autenticação &amp; Perfis</span>
+            </button>
+
+            {currentUser?.perfil === 'PACIENTE' && (
+              <button
+                onClick={() => setIsPatientPortalOpen(true)}
+                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-extrabold rounded-lg shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>👤 Meu Portal Paciente</span>
+              </button>
+            )}
 
             {/* Button to access link & download on mobile */}
             <button
@@ -1177,39 +1094,58 @@ export default function App() {
           </div>
 
           {/* User Profile & Clinic System Badge */}
-          <div className="flex items-center gap-4">
+          <button
+            onClick={() => setIsAuthModalOpen(true)}
+            className="flex items-center gap-3 p-1.5 rounded-2xl hover:bg-slate-100 transition-all cursor-pointer border border-transparent hover:border-slate-200"
+            title="Clique para alternar perfil, gerenciar usuários ou fazer login"
+          >
             <div className="text-right">
-              <h4 className="text-[12.5px] font-bold text-slate-800 leading-tight">{currentUser?.name || 'Dr. Augusto Faro'}</h4>
-              <p className="text-[10px] text-slate-500 font-medium">
-                {currentUserRole === 'ceo' && 'Diretor Clínico • CEO'}
-                {currentUserRole === 'lider' && 'Líder da Recepção • LDM'}
-                {currentUserRole === 'profissional' && 'Médico Oftalmologista • CRM BA 81047'}
-                {currentUserRole === 'cliente' && 'Paciente da Clínica'}
+              <div className="flex items-center justify-end gap-1.5">
+                <h4 className="text-[12.5px] font-black text-slate-800 leading-tight">
+                  {currentUser ? currentUser.nome : 'Entrar na Conta'}
+                </h4>
+                {currentUser && (
+                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase border ${
+                    currentUser.perfil === 'ADMIN' ? 'bg-amber-100 text-amber-900 border-amber-300' :
+                    currentUser.perfil === 'MEDICO' ? 'bg-cyan-100 text-cyan-900 border-cyan-300' :
+                    currentUser.perfil === 'RECEPCIONISTA' ? 'bg-indigo-100 text-indigo-900 border-indigo-300' :
+                    'bg-emerald-100 text-emerald-900 border-emerald-300'
+                  }`}>
+                    {currentUser.perfil}
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-500 font-bold">
+                {currentUser ? `${currentUser.email} • Trocar Perfil` : 'Clique para Autenticar'}
               </p>
             </div>
-            <img 
-              src={
-                currentUserRole === 'cliente'
-                  ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200'
-                  : 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=200'
-              } 
-              alt="Avatar do Usuário" 
-              referrerPolicy="no-referrer"
-              className="w-11 h-11 rounded-full border-2 border-sky-200 object-cover shadow-sm ring-4 ring-sky-50"
-            />
-            {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200/50 cursor-pointer transition-all active:scale-95 flex items-center justify-center shrink-0 min-h-[38px] min-w-[38px]"
-              title="Encerrar Sessão do Perfil Ativo"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
+            <div className="relative">
+              <img 
+                src={currentUser?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200"} 
+                alt={currentUser?.nome || "Usuário Íris"} 
+                referrerPolicy="no-referrer"
+                className="w-10 h-10 rounded-full border-2 border-sky-400 object-cover shadow-xs ring-2 ring-sky-100 shrink-0"
+              />
+              <span className="w-3 h-3 bg-emerald-500 border-2 border-white rounded-full absolute -bottom-0.5 -right-0.5" />
+            </div>
+          </button>
         </header>
 
         {/* MOBILE & PWA ORGANIZED QUICK ACTION BAR (lg:hidden) */}
         <div className="lg:hidden bg-slate-900 border-b border-slate-800 p-2 overflow-x-auto shrink-0 flex items-center gap-2 shadow-inner">
+          {/* BOTÃO OCULTAR / MOSTRAR INDICADORES PARA MOBILE ABAIXO DO DR. AUGUSTO */}
+          <button
+            onClick={() => setShowDashboard(!showDashboard)}
+            className={`px-3 py-1.5 font-black text-[11px] rounded-xl flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer transition-all border ${
+              showDashboard
+                ? 'bg-slate-800 text-amber-300 border-amber-400/40 hover:bg-slate-700'
+                : 'bg-sky-600 text-white border-sky-400 hover:bg-sky-500'
+            }`}
+            title="Alternar visibilidade do painel de indicadores"
+          >
+            <TrendingUp className="w-3.5 h-3.5 text-amber-300" />
+            <span>{showDashboard ? '📊 Ocultar Indicadores' : '📊 Mostrar Indicadores'}</span>
+          </button>
           <button
             onClick={() => setIsPatientListOpen(true)}
             className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-[11px] rounded-xl flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer"
@@ -2028,7 +1964,7 @@ export default function App() {
                     <div className="bg-white/80 p-3.5 rounded-2xl border border-sky-100/50 shadow-3xs space-y-3">
                       <div className="flex items-center justify-between pb-1.5 border-b border-sky-50">
                         <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5 text-sky-600" />
+                          <UserIcon className="w-3.5 h-3.5 text-sky-600" />
                           Memória Permanente do Paciente
                         </h4>
                         
@@ -2909,6 +2845,26 @@ export default function App() {
           onClose={() => setIsAiExamOpen(false)}
           patients={patients}
           onAddExamToPatient={handleAddExamToPatient}
+        />
+
+        {/* SISTEMA DE AUTENTICAÇÃO E CONTROLE DE ACESSO (RBAC) */}
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          currentUser={currentUser}
+          onLoginSuccess={handleLoginSuccess}
+          onLogout={handleLogout}
+          allUsers={allUsers}
+          onAddNewUserByAdmin={handleAddNewUserByAdmin}
+          auditLogs={auditLogs}
+        />
+
+        {/* PORTAL DO PACIENTE (PERFIL PACIENTE) */}
+        <PatientPortalModal
+          isOpen={isPatientPortalOpen}
+          onClose={() => setIsPatientPortalOpen(false)}
+          currentUser={currentUser}
+          patientData={selectedPatient}
         />
 
         {/* Global Loading Spinner overlay */}

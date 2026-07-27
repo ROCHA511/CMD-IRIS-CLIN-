@@ -3,6 +3,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+export type UserRole = 'ADMIN' | 'RECEPCIONISTA' | 'MEDICO' | 'PACIENTE';
+
+export interface User {
+  id: string;
+  nome: string;
+  email: string;
+  perfil: UserRole;
+  telefone?: string;
+  whatsapp?: string;
+  cpf?: string;
+  data_nascimento?: string;
+  ativo: boolean;
+  ultimo_login?: string;
+  avatar?: string;
+  created_at?: string;
+}
+
+export interface AuditLog {
+  id: string;
+  usuario_nome: string;
+  usuario_email: string;
+  perfil: UserRole;
+  acao: string;
+  detalhes?: string;
+  horario: string;
+  ip: string;
+  dispositivo: string;
+}
+
 export interface OpticalMetrics {
   sph: string;  // Esférico (Spherical)
   cyl: string;  // Cilíndrico (Cylinder)
@@ -107,4 +136,31 @@ export interface Transaction {
   formaPagamento?: 'Dinheiro' | 'Pix' | 'Cartão (cc)' | 'Bancário / Depósito';
   formaPagamentoId?: number; // 1: Dinheiro, 2: Pix, 3: Cartão (cc), 4: Bancário / Depósito
 }
+
+export interface FilaAtendimentoItem {
+  id: string;
+  paciente_id: string;
+  paciente_nome: string;
+  medico_id: string;
+  medico_nome: string;
+  consultorio: string;
+  data_chegada: string;
+  pagamento_confirmado_em: string;
+  status: 'AGUARDANDO' | 'CHAMADO' | 'EM_ATENDIMENTO' | 'FINALIZADO' | 'CANCELADO';
+  chamado_em?: string;
+  inicio_atendimento?: string;
+  fim_atendimento?: string;
+  observacao?: string;
+}
+
+export interface FilaLog {
+  id: string;
+  paciente_nome: string;
+  medico_nome: string;
+  consultorio: string;
+  evento: 'ENTROU_NA_FILA' | 'PACIENTE_CHAMADO' | 'EM_ATENDIMENTO' | 'FINALIZADO';
+  horario: string;
+  duracao_minutos?: number;
+}
+
 
