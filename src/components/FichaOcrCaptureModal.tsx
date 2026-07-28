@@ -73,21 +73,25 @@ export default function FichaOcrCaptureModal({
 
   const startCamera = async () => {
     setCameraError(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
-      mediaStreamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
+    setIsCameraActive(true);
+    
+    // Pequeno delay para garantir que o elemento de vídeo foi montado e está visível no DOM
+    setTimeout(async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
+        mediaStreamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play();
+        }
+      } catch (err) {
+        console.error(err);
+        setCameraError('Permissão da câmera negada ou dispositivo indisponível.');
+        setIsCameraActive(false);
       }
-      setIsCameraActive(true);
-    } catch (err) {
-      console.error(err);
-      setCameraError('Permissão da câmera negada ou dispositivo indisponível.');
-      setIsCameraActive(false);
-    }
+    }, 100);
   };
 
   const stopCamera = () => {
@@ -414,20 +418,21 @@ export default function FichaOcrCaptureModal({
         <div className="flex-1 overflow-y-auto p-5 bg-[#070c18]/45 flex flex-col min-h-0">
           {step === 'capture' && (
             <div className="flex-1 flex flex-col items-center justify-center gap-5 py-8">
-              {isCameraActive ? (
-                <div className="relative w-full max-w-2xl aspect-video bg-slate-900 rounded-3xl overflow-hidden border border-amber-500/20 shadow-lg flex items-center justify-center">
-                  <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
-                  <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3">
-                    <button onClick={capturePhoto} className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-full font-black text-xs shadow-lg cursor-pointer transition-transform active:scale-95 border-2 border-white flex items-center gap-2">
-                      <Camera className="w-4.5 h-4.5" />
-                      Capturar Ficha Agora
-                    </button>
-                    <button onClick={stopCamera} className="p-2.5 bg-slate-900/80 hover:bg-slate-900 text-white rounded-full cursor-pointer">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
+              {/* O elemento de vídeo fica sempre montado no DOM para garantir que a ref videoRef.current nunca seja null */}
+              <div className={`relative w-full max-w-2xl aspect-video bg-slate-900 rounded-3xl overflow-hidden border border-amber-500/20 shadow-lg items-center justify-center ${isCameraActive ? 'flex' : 'hidden'}`}>
+                <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3">
+                  <button onClick={capturePhoto} className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-full font-black text-xs shadow-lg cursor-pointer transition-transform active:scale-95 border-2 border-white flex items-center gap-2">
+                    <Camera className="w-4.5 h-4.5" />
+                    Capturar Ficha Agora
+                  </button>
+                  <button onClick={stopCamera} className="p-2.5 bg-slate-900/80 hover:bg-slate-900 text-white rounded-full cursor-pointer">
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-              ) : (
+              </div>
+
+              {!isCameraActive && (
                 <div className="max-w-md w-full bg-[#0c1326] border border-amber-500/15 p-8 rounded-3xl text-center space-y-5 shadow-lg">
                   <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto text-amber-400">
                     <Camera className="w-8 h-8" />
