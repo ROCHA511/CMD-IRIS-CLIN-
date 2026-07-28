@@ -15,7 +15,11 @@ const TABLE_PREFIX_MAP: Record<string, string> = {
   'perfis': 'iris_perfis',
   'consultas_chamados': 'iris_consultas_chamados',
   'mensagens_chat': 'iris_mensagens_chat',
-  'transacoes_caixa': 'iris_transacoes_caixa'
+  'transacoes_caixa': 'iris_transacoes_caixa',
+  'patient_documents': 'iris_patient_documents',
+  'patient_ocr': 'iris_patient_ocr',
+  'patient_update_history': 'iris_patient_update_history',
+  'patient_ai_summary': 'iris_patient_ai_summary'
 };
 
 // Local Cache Fallback class mimicking essential Supabase queries

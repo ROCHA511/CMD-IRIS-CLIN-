@@ -39,6 +39,7 @@ interface PatientDossierModalProps {
   patient: Patient;
   onUpdatePatientDocuments: (patientId: string, documents: PatientDocument[]) => void;
   onUpdatePatientOpticalData?: (patientId: string, opticalData: PatientOpticalData) => void;
+  onTriggerFichaOcr?: () => void;
 }
 
 // High quality medical prescription & exam placeholder images
@@ -70,9 +71,10 @@ export default function PatientDossierModal({
   onClose,
   patient,
   onUpdatePatientDocuments,
-  onUpdatePatientOpticalData
+  onUpdatePatientOpticalData,
+  onTriggerFichaOcr
 }: PatientDossierModalProps) {
-  const [activeTab, setActiveTab] = useState<'geral' | 'receitas_exames'>('receitas_exames');
+  const [activeTab, setActiveTab] = useState<'geral' | 'receitas_exames' | 'documentos_escaneados'>('receitas_exames');
   const [documents, setDocuments] = useState<PatientDocument[]>(() => {
     if (patient.documents && patient.documents.length > 0) {
       return patient.documents;
@@ -527,7 +529,23 @@ export default function PatientDossierModal({
               <Camera className="w-4 h-4 text-sky-600" />
               <span>Módulo de Receitas & Exames (Câmera)</span>
               <span className="bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                {documents.length}
+                {documents.filter(d => d.type !== 'ocr_ficha').length}
+              </span>
+            </button>
+
+            {/* NOVA ABA: DOCUMENTOS ESCANEADOS */}
+            <button
+              onClick={() => setActiveTab('documentos_escaneados')}
+              className={`py-3 px-5 text-xs font-extrabold uppercase tracking-wider flex items-center gap-2 transition-all border-b-2 cursor-pointer ${
+                activeTab === 'documentos_escaneados'
+                  ? 'border-sky-600 text-sky-950 bg-white shadow-2xs'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Layers className="w-4 h-4 text-sky-600" />
+              <span>Documentos Escaneados</span>
+              <span className="bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                {documents.filter(d => d.type === 'ocr_ficha').length}
               </span>
             </button>
 
@@ -982,6 +1000,95 @@ export default function PatientDossierModal({
 
               </div>
 
+            </div>
+          ) : activeTab === 'documentos_escaneados' ? (
+            /* TAB 3: DOCUMENTOS ESCANEADOS (OCR + IA) */
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                    <Layers className="w-4.5 h-4.5 text-sky-600" />
+                    Histórico de Fichas e Prontuários Escaneados (Duplicidade Zero)
+                  </h3>
+                  <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Listagem das fichas digitalizadas via OCR e mescladas ao prontuário do paciente</p>
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={onTriggerFichaOcr}
+                  className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 text-xs font-black rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-[0.98] border border-amber-400/40"
+                >
+                  <Camera className="w-4 h-4 text-slate-950" />
+                  <span>Fotografar Ficha</span>
+                </button>
+              </div>
+
+              {documents.filter(d => d.type === 'ocr_ficha').length === 0 ? (
+                <div className="py-16 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-2 bg-white rounded-2xl border border-sky-100/80 shadow-xs">
+                  <Layers className="w-10 h-10 text-sky-400/40 animate-pulse" />
+                  <span>Nenhuma ficha física digitalizada para este paciente ainda.</span>
+                  <p className="text-[10px] text-slate-450">Clique em "Fotografar Ficha" acima para ler e cadastrar dados automaticamente.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {documents.filter(d => d.type === 'ocr_ficha').map((doc) => (
+                    <div key={doc.id} className="bg-white p-5 rounded-2xl border border-sky-100/80 shadow-2xs grid grid-cols-1 md:grid-cols-12 gap-5 animate-fade-in">
+                      
+                      {/* Image Preview */}
+                      <div className="md:col-span-3 aspect-video md:aspect-square bg-slate-950 rounded-xl overflow-hidden relative cursor-pointer group" onClick={() => setSelectedImageModal(doc)}>
+                        <img src={doc.imageUrl} alt={doc.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <div className="absolute inset-0 bg-slate-900/35 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="bg-slate-950/85 text-white px-2 py-0.5 text-[9px] font-black rounded border border-slate-700 uppercase">Ver Ficha Ampliada</span>
+                        </div>
+                      </div>
+
+                      {/* Extracted Details & IA Summary */}
+                      <div className="md:col-span-9 space-y-3 flex flex-col justify-between">
+                        <div className="flex items-center justify-between border-b border-sky-50 pb-2 shrink-0">
+                          <div>
+                            <h4 className="text-xs font-black text-slate-800 uppercase tracking-tight">{doc.title}</h4>
+                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">Importado em: {doc.date} • Versão {doc.versao || '2.0'}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteDocument(doc.id)}
+                            className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-all cursor-pointer"
+                            title="Remover Ficha"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+                          <div className="p-3 bg-slate-50/70 border border-slate-100 rounded-xl">
+                            <span className="text-[9px] text-slate-400 font-black uppercase block">Resumo IA Iris AI</span>
+                            <p className="text-[10.5px] text-slate-605 font-semibold leading-relaxed mt-1">
+                              {doc.notes || 'Nenhum resumo clínico gerado.'}
+                            </p>
+                          </div>
+
+                          <div className="p-3 bg-indigo-50/20 border border-indigo-100/50 rounded-xl flex flex-col justify-between">
+                            <div>
+                              <div className="text-[9.5px] text-sky-850 font-black uppercase flex items-center gap-1">
+                                <ShieldCheck className="w-3.5 h-3.5 text-sky-600" />
+                                Validação Anti-Duplicidade
+                              </div>
+                              <p className="text-[10px] text-slate-600 font-semibold mt-1 leading-relaxed">
+                                Cadastro higienizado e mesclado. Origem OCR Ficha física integrada à memória da Iris AI.
+                              </p>
+                            </div>
+                            <div className="text-[9px] text-slate-400 font-mono mt-2 pt-2 border-t border-indigo-100/30">
+                              Operador: {doc.doctorName || 'Dr. Augusto Faro'}
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             /* TAB 2: OVERALL DOSSIER FULL CLINICAL REPORT */

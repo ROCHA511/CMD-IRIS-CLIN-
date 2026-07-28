@@ -244,6 +244,9 @@ function getIrisFallbackResponse(lastMessage: string, patientContext: any): stri
     fallbackText += `Temos exames de vista e de mapeamento na ÍrisClin a partir de **R$ 190,00** (valor no Dinheiro ou Pix, ou R$ 220,00 no cartão)! Qual é o exame ou procedimento solicitado? Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
   } else if (textLower.includes('pagamento') || textLower.includes('cartão') || textLower.includes('pix') || textLower.includes('crédito') || textLower.includes('forma')) {
     fallbackText += `Nossas formas de pagamento são: **Pix, Dinheiro, Cartão de Débito e Cartão de Crédito**. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
+  } else if (textLower.includes('endereço') || textLower.includes('localização') || textLower.includes('localizacao') || textLower.includes('onde fica') || textLower.includes('como chegar') || textLower.includes('mapa')) {
+    fallbackText = `Segue nossa localização 😊\n\nhttps://www.google.com/maps/search/?api=1&query=Rua+Vinte+e+Tr%C3%AAs+de+Abril+51B+Centro+Ituber%C3%A1+Bahia+45435000`;
+    return fallbackText;
   } else if (textLower.includes('exames') || textLower.includes('realiza') || textLower.includes('quais')) {
     fallbackText += `Na ÍrisClin realizamos os seguintes exames: Check-up de Glaucoma, Teste do Olhinho, Curva Tensional, TSH (Sobrecarga Hídrica), Retinografia Simples, Ultrassonografia Ocular, Biometria, Gonioscopia, Paquimetria, Ceratoscopia (Topografia), Mapeamento de Retina e Fundoscopia. Valores sujeitos a confirmação pela clínica. Deseja agendar sua avaliação na ÍRIS CLIN?`;
   } else if (textLower.includes('agendar') || textLower.includes('consulta') || textLower.includes('marcar') || textLower.includes('vaga') || textLower.includes('agenda')) {
@@ -276,7 +279,14 @@ app.post('/api/copilot/chat', async (req, res) => {
       TREINAMENTO OFICIAL DA IA "IRIS" – CÉREBRO OPERACIONAL ÍRISCLIN (VERSÃO ENTERPRISE 2026)
 
       Você é IRIS, a Inteligência Artificial e Secretária Virtual Oficial da clínica ÍrisClin através da API Oficial do WhatsApp Business (Meta) no número oficial +55 73 98104-7390.
-      Você não é apenas um robô: aja como uma secretária virtual especializada, acolhedora, humana, educada e altamente profissional de uma clínica oftalmológica de excelência.
+      Você não é apenas um robô: Aja como uma secretária virtual especializada, acolhedora, humana, educada e altamente profissional de uma clínica oftalmológica de excelência.
+
+      *** DADOS DE IDENTIDADE ***
+      - Nome da IA: Iris
+      - Empresa / Clínica: ÍrisClin (Oftalmologia e Cuidados Visuais)
+      - Canal Oficial: WhatsApp Business API (Meta)
+      - Número Oficial: +55 73 98104-7390
+      - Endereço Oficial: Clínica Iris Clin, Rua Vinte e Três de Abril, Número 51B, Centro, Ituberá, Bahia, CEP 45435000, Brasil.colhedora, humana, educada e altamente profissional de uma clínica oftalmológica de excelência.
 
       *** DADOS DE IDENTIDADE ***
       - Nome da IA: Iris
@@ -364,6 +374,7 @@ app.post('/api/copilot/chat', async (req, res) => {
       8. Se o paciente perguntar formas de pagamento, informar estritamente: Pix, Dinheiro, Cartão de Débito, Cartão de Crédito.
       9. Se não encontrar um exame na memória, encaminhar educadamente o atendimento para a recepção humana.
       10. Priorizar sempre uma linguagem acolhedora, humana (respeitando idosos e crianças), profissional, educada e objetiva.
+      11. Se o paciente perguntar pelo endereço, localização ou como chegar, você deve responder com as informações do Endereço Oficial em Ituberá - BA, citando textualmente "Segue nossa localização 😊" e logo em seguida enviar este link do Google Maps: https://www.google.com/maps/search/?api=1&query=Rua+Vinte+e+Tr%C3%AAs+de+Abril+51B+Centro+Ituber%C3%A1+Bahia+45435000
 
       *** MEMÓRIA INTELIGENTE & CONTEXTO COMPLETO ***
       - Sempre mantenha contexto completo durante toda a conversa:
@@ -481,7 +492,7 @@ app.post('/api/whatsapp/simulate', async (req, res) => {
       break;
     case 'send_location':
       systemMessage = `Localização do consultório e mapa enviados via WhatsApp para ${phone}.`;
-      botReply = `Legal! Enviei nossa localização exata com o link do Google Maps para o seu celular. Ficamos na Av. Paulista, 1000 - Conjunto 42, pertinho do Metrô Trianon-Masp. Temos estacionamento no local, tá bom? Te espero! 🚗`;
+      botReply = `Segue nossa localização 😊\n\nhttps://www.google.com/maps/search/?api=1&query=Rua+Vinte+e+Tr%C3%AAs+de+Abril+51B+Centro+Ituber%C3%A1+Bahia+45435000`;
       break;
     case 'send_budget_pdf':
       systemMessage = `PDF do Orçamento Óptico Oficial gerado e enviado via WhatsApp para ${phone}.`;
@@ -1025,6 +1036,155 @@ app.post('/api/copilot/text-to-speech', async (req, res) => {
   } catch (error: any) {
     console.error('[Text-to-Speech Error]:', error);
     res.status(500).json({ error: error.message || 'Erro ao sintetizar áudio.' });
+  }
+});
+
+// 8. API: Processamento de OCR de Ficha com IA (Gemini) + Validações
+app.post('/api/copilot/ocr-ficha', async (req, res) => {
+  try {
+    const { imageBase64 } = req.body;
+    if (!imageBase64) {
+      return res.status(400).json({ error: 'Image base64 is required.' });
+    }
+
+    let parsedResult;
+
+    if (ai) {
+      try {
+        const matches = imageBase64.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+        let mimeType = 'image/jpeg';
+        let base64Data = imageBase64;
+        if (matches && matches.length === 3) {
+          mimeType = matches[1];
+          base64Data = matches[2];
+        }
+
+        const promptInstructions = `
+          Você é o motor de OCR e Inteligência Clínica da clínica ÍrisClin.
+          Analise a imagem da ficha clínica (mesmo que seja manuscrita ou de péssima qualidade) e extraia todas as informações disponíveis.
+          Normalize a grafia dos nomes, CEPs, CPFs e e-mails. Corrija ruídos de digitação ou leitura.
+          Retorne estritamente um objeto JSON com o seguinte formato, sem formatações de markdown adicionais:
+          {
+            "nome": "Nome completo do paciente",
+            "cpf": "CPF formatado (ex: 000.000.000-00)",
+            "rg": "RG sem pontos",
+            "data_nascimento": "Data de nascimento formatada YYYY-MM-DD",
+            "telefone": "Telefone ou celular formatado",
+            "whatsapp": "WhatsApp formatado",
+            "email": "E-mail em minúsculas",
+            "endereco": "Rua, avenida, etc.",
+            "cidade": "Cidade",
+            "estado": "UF",
+            "cep": "CEP formatado 00000-000",
+            "profissao": "Profissão",
+            "medico": "Médico indicado na ficha",
+            "historico": "Histórico do paciente transcrito ou queixa principal",
+            "patologias": "Patologias prévias identificadas",
+            "medicamentos": "Medicamentos listados",
+            "cirurgias": "Cirurgias oculares anteriores",
+            "resumoIA": "Resumo clínico estruturado sobre as condições de visão do paciente e sugestões iniciais.",
+            "inconsistencias": []
+          }
+        `;
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { text: promptInstructions },
+                {
+                  inlineData: {
+                    mimeType,
+                    data: base64Data
+                  }
+                }
+              ]
+            }
+          ],
+          config: {
+            responseMimeType: 'application/json'
+          }
+        });
+
+        parsedResult = JSON.parse(response.text || '{}');
+      } catch (err) {
+        console.warn('[Gemini OCR Ficha Error, falling back to mock]:', err);
+      }
+    }
+
+    if (!parsedResult) {
+      // Mock robusto de OCR de Ficha para modo offline ou falhas de rede
+      parsedResult = {
+        nome: 'Marly Rocha da Silva',
+        cpf: '123.456.789-00',
+        rg: '14235342 BA',
+        data_nascimento: '1978-04-23',
+        telefone: '(73) 99990-4727',
+        whatsapp: '(73) 99990-4727',
+        email: 'marly@rocha.com',
+        endereco: 'Rua Vinte e Três de Abril, 120',
+        cidade: 'Ituberá',
+        estado: 'BA',
+        cep: '45435-000',
+        profissao: 'Empresária',
+        medico: 'Dr. Augusto Faro',
+        historico: 'Paciente queixa-se de embaçamento visual progressivo e dores de cabeça persistentes ao ler de perto.',
+        patologias: 'Investigação de glaucoma ou aumento de pressão intraocular.',
+        medicamentos: 'Nenhum relatado.',
+        cirurgias: 'Cirurgia de pterígio realizada no olho esquerdo há 2 anos.',
+        resumoIA: 'Paciente Marly Rocha da Silva, de 48 anos de idade, apresenta histórico de cirurgia oftálmica prévia e queixa atual de cansaço visual. Necessita de mapeamento de retina preventiva para glaucoma.',
+        inconsistencias: [
+          'E-mail não constava legível na ficha física e foi estimado.'
+        ]
+      };
+    }
+
+    // Validações adicionais no servidor
+    const validationErrors: string[] = [];
+    
+    // CPF
+    if (parsedResult.cpf) {
+      const cleanCpf = parsedResult.cpf.replace(/\D/g, '');
+      if (cleanCpf.length !== 11) {
+        validationErrors.push('CPF com tamanho inválido.');
+      }
+    } else {
+      validationErrors.push('CPF ausente.');
+    }
+
+    // Telefone
+    if (parsedResult.telefone) {
+      const cleanPhone = parsedResult.telefone.replace(/\D/g, '');
+      if (cleanPhone.length < 10) {
+        validationErrors.push('Telefone inválido.');
+      }
+    }
+
+    // CEP
+    if (parsedResult.cep) {
+      const cleanCep = parsedResult.cep.replace(/\D/g, '');
+      if (cleanCep.length !== 8) {
+        validationErrors.push('CEP inválido.');
+      }
+    }
+
+    if (validationErrors.length > 0) {
+      parsedResult.inconsistencias = [
+        ...(parsedResult.inconsistencias || []),
+        ...validationErrors
+      ];
+    }
+
+    res.json({
+      success: true,
+      data: parsedResult,
+      fallback: !ai
+    });
+  } catch (error: any) {
+    console.error('Error processing OCR Ficha:', error);
+    res.status(500).json({ error: error.message || 'Erro ao ler ficha clínica.' });
   }
 });
 

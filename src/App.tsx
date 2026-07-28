@@ -75,6 +75,8 @@ import PwaConfigHelper from './components/PwaConfigHelper';
 import PatientListModal from './components/PatientListModal';
 import WeeklyConfirmedAgendaModal from './components/WeeklyConfirmedAgendaModal';
 import IrisVoiceSettingsModal from './components/IrisVoiceSettingsModal';
+import FichaOcrCaptureModal from './components/FichaOcrCaptureModal';
+import { calculateAge } from './utils/age';
 import OfflineSyncModal from './components/OfflineSyncModal';
 import TeamPerformanceModal from './components/TeamPerformanceModal';
 import AiExamAnalysisModal from './components/AiExamAnalysisModal';
@@ -419,7 +421,8 @@ export default function App() {
   const [newPatientAntiReflexo, setNewPatientAntiReflexo] = useState(true);
   const [newPatientBlueControl, setNewPatientBlueControl] = useState(true);
   const [newPatientMaterial, setNewPatientMaterial] = useState('Acetato Preto');
-  const [newPatientAge, setNewPatientAge] = useState<number>(35);
+  const [newPatientBirthDate, setNewPatientBirthDate] = useState<string>('1978-04-23');
+  const [isOcrCaptureOpen, setIsOcrCaptureOpen] = useState(false);
   const [newPatientPhone, setNewPatientPhone] = useState<string>('(73) 98104-7390');
   const [newPatientEmail, setNewPatientEmail] = useState<string>('');
   const [newPatientAddress, setNewPatientAddress] = useState<string>('');
@@ -806,7 +809,8 @@ export default function App() {
           messages: activeHistory,
           patientContext: {
             name: selectedPatient.name,
-            age: selectedPatient.age,
+            age: calculateAge(selectedPatient.data_nascimento || ''),
+            data_nascimento: selectedPatient.data_nascimento,
             profession: selectedPatient.profession,
             city: selectedPatient.city,
             previousGlasses: selectedPatient.previousGlasses,
@@ -1056,10 +1060,83 @@ export default function App() {
     }
   };
 
-  // Create new patient with memory layers
+  // Create new patient with memory layers and Anti-Duplicidade
   const handleAddPatient = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPatientName.trim()) return;
+
+    // Busca sequencial por duplicidade
+    let existing = patients.find(p => {
+      // 1. CPF
+      if (newPatientCpf && p.cpf && p.cpf.replace(/\D/g, '') === newPatientCpf.replace(/\D/g, '')) return true;
+      // 2. Telefone
+      if (newPatientPhone && p.phone && p.phone.replace(/\D/g, '') === newPatientPhone.replace(/\D/g, '')) return true;
+      // 3. Nome completo + data_nascimento
+      if (p.name.trim().toLowerCase() === newPatientName.trim().toLowerCase() && p.data_nascimento === newPatientBirthDate) return true;
+      return false;
+    });
+
+    if (existing) {
+      // Atualiza apenas os campos vazios do paciente existente (nunca sobrescreve informações mais recentes)
+      const updatedFields: any = {};
+      const fields = [
+        'phone', 'email', 'address', 'cpf', 
+        'profession', 'city', 'previousGlasses', 
+        'doctorInCharge', 'eyeDiseases', 'allergies'
+      ];
+      
+      const fieldMappings: any = {
+        phone: newPatientPhone.trim(),
+        email: newPatientEmail.trim(),
+        address: newPatientAddress.trim(),
+        cpf: newPatientCpf.trim(),
+        profession: newPatientProfession,
+        city: newPatientCity,
+        previousGlasses: newPatientPrevGlasses,
+        doctorInCharge: newPatientDoctor,
+        eyeDiseases: newPatientDiseases,
+        allergies: newPatientAllergies
+      };
+
+      fields.forEach(f => {
+        const newVal = fieldMappings[f];
+        const currentVal = (existing as any)[f];
+        if (newVal && !currentVal) {
+          updatedFields[f] = newVal;
+        }
+      });
+
+      const updatedPatient: Patient = {
+        ...existing,
+        ...updatedFields,
+        timeline: [
+          {
+            id: `t-update-${Date.now()}`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            title: `Cadastro Atualizado (Origem: Manual/Validação)`,
+            iconType: 'registration',
+            status: 'done'
+          },
+          ...existing.timeline
+        ]
+      };
+
+      setPatients(prev => prev.map(p => p.id === existing.id ? updatedPatient : p));
+      saveSinglePatientToIndexedDB(updatedPatient);
+      enqueueOfflineAction({ type: 'UPDATE_PATIENT', payload: updatedPatient });
+      setSelectedId(existing.id);
+      showToast('Duplicidade Zero: Paciente existente localizado e atualizado com sucesso!', 'success');
+      
+      // Reset form fields
+      setNewPatientName('');
+      setNewPatientPhone('(73) 98104-7390');
+      setNewPatientEmail('');
+      setNewPatientAddress('');
+      setNewPatientCpf('');
+      setNewPatientStatus('Orçamento');
+      setShowAddModal(false);
+      return;
+    }
 
     const newId = `patient-${Date.now()}`;
     const newPat: Patient = {
@@ -1081,10 +1158,10 @@ export default function App() {
         materialArmacao: newPatientMaterial
       },
       timeline: [
-        { id: `t-${Date.now()}-1`, time: '10:28 AM', title: 'Paciente Cadastrado', iconType: 'registration', status: 'done' }
+        { id: `t-${Date.now()}-1`, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), title: 'Paciente Cadastrado', iconType: 'registration', status: 'done' }
       ],
       chatHistory: [
-        { id: `c-${Date.now()}-1`, sender: 'system', senderName: 'Sistema', content: 'Ficha clínica do paciente inicializada no cérebro da Iris AI.', timestamp: '10:28 AM' }
+        { id: `c-${Date.now()}-1`, sender: 'system', senderName: 'Sistema', content: 'Ficha clínica do paciente inicializada no cérebro da Iris AI.', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
       ],
       aiSuggestions: [
         'Realizar mapeamento de retina presencial por idade.',
@@ -1095,7 +1172,7 @@ export default function App() {
       email: newPatientEmail.trim() || 'paciente@irisclin.com.br',
       address: newPatientAddress.trim() || 'Centro, Itabuna - BA',
       cpf: newPatientCpf.trim() || '000.000.000-00',
-      age: newPatientAge,
+      data_nascimento: newPatientBirthDate,
       profession: newPatientProfession,
       city: newPatientCity,
       previousGlasses: newPatientPrevGlasses,
@@ -1107,7 +1184,8 @@ export default function App() {
       eyeDiseases: newPatientDiseases,
       allergies: newPatientAllergies,
       crmStage: 'Lead',
-      purchaseProbability: 40
+      purchaseProbability: 40,
+      documents: []
     };
 
     setPatients(prev => [newPat, ...prev]);
@@ -1964,7 +2042,7 @@ export default function App() {
                       </span>
                     </div>
                     <p className="text-[9.5px] text-slate-400 truncate font-medium mt-0.5">
-                      {selectedPatient.age || 48} anos • Dr. Augusto Faro • <span className="font-semibold text-amber-400">{selectedPatient.status}</span>
+                      {calculateAge(selectedPatient.data_nascimento || '') || 48} anos • Dr. Augusto Faro • <span className="font-semibold text-amber-400">{selectedPatient.status}</span>
                     </p>
                   </div>
                 </div>
@@ -2154,6 +2232,30 @@ export default function App() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+                {/* BARRA DE ATALHOS RÁPIDOS DE ATENDIMENTO */}
+                <div className="px-4 py-1.5 bg-[#091022]/80 border-t border-amber-500/5 flex items-center justify-between gap-2 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleWhatsAppTrigger('send_location')}
+                      className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 rounded-lg text-[10px] font-black border border-amber-500/20 transition-all flex items-center gap-1 cursor-pointer"
+                      title="Enviar Localização Oficial da Clínica via WhatsApp"
+                    >
+                      <MapPin className="w-3 h-3 text-amber-400" />
+                      <span>📍 Enviar Localização</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsOcrCaptureOpen(true)}
+                      className="px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 rounded-lg text-[10px] font-black border border-sky-500/20 transition-all flex items-center gap-1 cursor-pointer"
+                      title="Escanear e ler ficha clínica impressa do paciente"
+                    >
+                      <Camera className="w-3 h-3 text-sky-450" />
+                      <span>📷 Fotografar Ficha</span>
+                    </button>
+                  </div>
+                  <span className="text-[8.5px] text-slate-500 font-semibold uppercase tracking-wider">Atalhos Rápidos</span>
+                </div>
 
                 <form onSubmit={handleSendMessage} className="p-3 bg-[#0c1326]/90 border-t border-amber-500/10 flex items-center gap-2 shrink-0">
                   {/* Media attachment button */}
@@ -2368,6 +2470,15 @@ export default function App() {
                             <Camera className="w-3 h-3 text-amber-400" />
                             <span>Dossiê</span>
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsOcrCaptureOpen(true)}
+                            className="px-2 py-0.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 rounded-md text-[10px] font-extrabold transition-all flex items-center gap-1 cursor-pointer border border-sky-500/20 shadow-3xs"
+                            title="Fotografar e escanear ficha clínica do paciente"
+                          >
+                            <Camera className="w-3 h-3 text-sky-400" />
+                            <span>Fotografar Ficha</span>
+                          </button>
                         </div>
                       </div>
 
@@ -2393,11 +2504,11 @@ export default function App() {
                         </div>
 
                         <div>
-                          <label className="text-[9px] text-slate-400 font-bold block uppercase">Idade:</label>
+                          <label className="text-[9px] text-slate-400 font-bold block uppercase">Data Nascimento:</label>
                           <input 
-                            type="number" 
-                            value={selectedPatient.age || 0} 
-                            onChange={(e) => handleUpdateProfileField('age', parseInt(e.target.value) || 0)}
+                            type="date" 
+                            value={selectedPatient.data_nascimento || ''} 
+                            onChange={(e) => handleUpdateProfileField('data_nascimento', e.target.value)}
                             className="font-semibold text-slate-200 bg-transparent border-b border-transparent focus:border-amber-500/30 focus:outline-none w-full py-0.5"
                           />
                         </div>
@@ -2840,13 +2951,31 @@ export default function App() {
                         </select>
                       </div>
 
+                      <div className="col-span-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-2xl flex items-center justify-between gap-3 mb-2">
+                        <div>
+                          <p className="text-[11px] font-black text-amber-300 uppercase tracking-wider">Cadastro Rápido via Scanner</p>
+                          <p className="text-[9.5px] text-slate-400 font-semibold mt-0.5">Fotografe a ficha e preencha todos os campos via OCR com IA automaticamente</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAddModal(false);
+                            setIsOcrCaptureOpen(true);
+                          }}
+                          className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black text-xs rounded-xl shadow-md border border-amber-400/30 flex items-center gap-1 cursor-pointer"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                          <span>Fotografar Ficha</span>
+                        </button>
+                      </div>
+
                       <div>
-                        <label className="text-[10px] text-slate-500 font-bold block mb-1">Idade:</label>
+                        <label className="text-[10px] text-slate-500 font-bold block mb-1">Data de Nascimento:</label>
                         <input 
-                          type="number" 
-                          value={newPatientAge} 
-                          onChange={(e) => setNewPatientAge(parseInt(e.target.value) || 30)}
-                          className="w-full border border-sky-100 rounded-lg p-2 text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                          type="date" 
+                          value={newPatientBirthDate} 
+                          onChange={(e) => setNewPatientBirthDate(e.target.value)}
+                          className="w-full border border-sky-100 rounded-lg p-2 text-xs text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                         />
                       </div>
 
@@ -3073,6 +3202,29 @@ export default function App() {
           patient={selectedPatient}
           onUpdatePatientDocuments={handleUpdatePatientDocuments}
           onUpdatePatientOpticalData={handleUpdatePatientOpticalData}
+          onTriggerFichaOcr={() => {
+            setIsDossierOpen(false);
+            setIsOcrCaptureOpen(true);
+          }}
+        />
+
+        <FichaOcrCaptureModal
+          isOpen={isOcrCaptureOpen}
+          onClose={() => setIsOcrCaptureOpen(false)}
+          patients={patients}
+          currentUser={currentUser}
+          onSavePatient={(patientToSave, isUpdate, fieldsUpdated) => {
+            if (isUpdate) {
+              setPatients(prev => prev.map(p => p.id === patientToSave.id ? patientToSave : p));
+              showToast('Ficha clínica mesclada e atualizada com sucesso no CRM!', 'success');
+            } else {
+              setPatients(prev => [patientToSave, ...prev]);
+              setSelectedId(patientToSave.id);
+              showToast('Novo paciente cadastrado e salvo com sucesso via OCR!', 'success');
+            }
+            saveSinglePatientToIndexedDB(patientToSave);
+            enqueueOfflineAction({ type: 'UPDATE_PATIENT', payload: patientToSave });
+          }}
         />
 
         <OutreachExamModal
